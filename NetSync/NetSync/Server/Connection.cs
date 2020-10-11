@@ -7,7 +7,6 @@ namespace NetSync.Server
         public readonly ushort ConnectionId;
         public bool IsConnected;
         public readonly NetworkServer ServerInstance;
-        internal TransportBase Transport;
 
         public Connection(ushort id, NetworkServer serverInstance)
         {

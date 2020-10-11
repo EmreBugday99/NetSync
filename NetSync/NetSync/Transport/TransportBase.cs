@@ -7,14 +7,14 @@ namespace NetSync.Transport
     {
         #region Client
 
-        internal delegate void ClientConnected();
-        internal event ClientConnected OnClientConnected;
+        public delegate void ClientConnected();
+        public event ClientConnected OnClientConnected;
 
-        internal delegate void ClientDataReceived(Packet packet, byte channel);
-        internal event ClientDataReceived OnClientDataReceived;
+        public delegate void ClientDataReceived(Packet packet, byte channel);
+        public event ClientDataReceived OnClientDataReceived;
 
-        internal delegate void ClientDisconnected();
-        internal event ClientDisconnected OnClientDisconnected;
+        public delegate void ClientDisconnected();
+        public event ClientDisconnected OnClientDisconnected;
 
         public abstract void ClientConnect(NetworkClient client);
 
@@ -35,20 +35,22 @@ namespace NetSync.Transport
 
         #region Server
 
-        internal delegate void ServerStarted(NetworkServer server);
-        internal event ServerStarted OnServerStarted;
+        public delegate void ServerStarted(NetworkServer server);
+        public event ServerStarted OnServerStarted;
 
-        internal delegate void ServerConnected(Connection connection);
-        internal event ServerConnected OnServerConnected;
+        public delegate void ServerConnected(Connection connection);
+        public event ServerConnected OnServerConnected;
 
-        internal delegate void ServerDataReceived(Connection connection, Packet packet, byte channel);
-        internal event ServerDataReceived OnServerDataReceived;
+        public delegate void ServerDataReceived(Connection connection, Packet packet, byte channel);
+        public event ServerDataReceived OnServerDataReceived;
 
-        internal delegate void ServerDisconnected(Connection connection);
-        internal event ServerDisconnected OnServerDisconnected;
+        public delegate void ServerDisconnected(Connection connection);
 
-        internal delegate void ServerStopped(NetworkServer server);
-        internal event ServerStopped OnServerStopped;
+        public event ServerDisconnected OnServerDisconnected;
+
+        public delegate void ServerStopped(NetworkServer server);
+
+        public event ServerStopped OnServerStopped;
 
         public abstract void ServerStart(NetworkServer server);
 
