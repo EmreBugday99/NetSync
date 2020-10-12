@@ -212,9 +212,9 @@ namespace NetSync.Transport.SyncTcp
                     PacketHeader packetHeader = new PacketHeader(channel, packetId);
                     _syncTcp.OnServerDataReceive(_connection, packetReceived, packetHeader);
                 }
-                catch
+                catch (Exception exception)
                 {
-                    _syncTcp.OnServerErrorDetected($"Error while receiving data from client [{_connection.ConnectionId}]");
+                    _syncTcp.OnServerErrorDetected($"Error while receiving data from client [{_connection.ConnectionId}] : " + exception);
                     _connection.Disconnect();
                 }
             }
