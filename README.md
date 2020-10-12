@@ -34,6 +34,17 @@ NetSync uses a handle system(it's just a random name I've come up with for the s
 <br>
 You can subscribe your handlers for networked events and listen to them. When a networked event happens it will invoke your handle if it was subscribed.
 <br>
+
+## Multi Channel Support
+NetSync supports multi channel system integration. Channels are a great way to categorize your packets according to your needs. 
+<br>
+Maybe you want to use channel specifically for encrypted transmission? You can easily integrate this into your Transport with channels.
+<br>
+By default you use the channel 1 for transmission. You can easily change that with specifying a new channel when sending a packet / registering a handler.
+<br>
+### WARNING: YOU SHOULD NEVER USE CHANNEL 0 AS IT IS RESERVED FOR NETSYNC!
+<br>
+<br>
 ### Most Importantly:
 # Performance Over Safety
 Unlike my previous library(InteractiveSync) NetSync will not hold your hand. If you do something which may crash the application, it will crash!
