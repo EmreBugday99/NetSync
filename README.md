@@ -45,6 +45,7 @@ By default you use the channel 1 for transmission. You can easily change that wi
 ### WARNING: YOU SHOULD NEVER USE CHANNEL 0 AS IT IS RESERVED FOR NETSYNC!
 <br>
 <br>
+
 ### Most Importantly:
 # Performance Over Safety
 Unlike my previous library(InteractiveSync) NetSync will not hold your hand. If you do something which may crash the application, it will crash!
