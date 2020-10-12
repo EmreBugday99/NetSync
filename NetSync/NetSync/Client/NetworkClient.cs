@@ -56,19 +56,18 @@ namespace NetSync.Client
         public void RegisterHandler(byte packetId, MessageHandle handler, byte channel = 1)
         {
             PacketHeader packetHeader = new PacketHeader(channel, packetId);
+            if(ReceiveHandlers.ContainsKey(packetHeader))
+                throw new Exception($"Handler is already registered: {handler.Method.Name}");
 
-            if (ReceiveHandlers.TryAdd(packetHeader, handler) == false)
-            {
-                throw new Exception($"Error while registering handle: {handler.Method.Name}");
-            }
+            ReceiveHandlers.Add(packetHeader, handler);
         }
 
         public void RemoveHandler(MessageHandle handler)
         {
-            foreach (var (key, value) in ReceiveHandlers)
+            foreach (var msgHandler in ReceiveHandlers)
             {
-                if (value.Method.Name == handler.Method.Name)
-                    ReceiveHandlers.Remove(key);
+                if (msgHandler.Value.Method.Name == handler.Method.Name)
+                    ReceiveHandlers.Remove(msgHandler.Key);
             }
         }
 
@@ -77,7 +76,6 @@ namespace NetSync.Client
         public void NetworkSend(byte packetId, Packet packet, byte channel = 1)
         {
             PacketHeader packetHeader = new PacketHeader(channel, packetId);
-            packet.InsertUnsignedShort(0, packetId);
             Transport.ClientSendData(packet, packetHeader);
         }
 
@@ -98,7 +96,7 @@ namespace NetSync.Client
 
         private void OnClientError(string description)
         {
-            Console.WriteLine("Client Error: " + description);
+            throw new Exception("Client Error: " + description);
         }
 
         #endregion Transport Events

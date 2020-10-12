@@ -64,10 +64,10 @@ namespace NetSync.Server
         {
             PacketHeader packetHeader = new PacketHeader(channel, packetId);
 
-            if (ReceiveHandlers.TryAdd(packetHeader, handler) == false)
-            {
-                throw new Exception($"Error while registering handle: {handler.Method.Name}");
-            }
+            if(ReceiveHandlers.ContainsKey(packetHeader))
+                throw new Exception($"Handler is already registered: {handler.Method.Name}");
+
+            ReceiveHandlers.Add(packetHeader, handler);
         }
 
         public void RemoveHandler(MessageHandle handler)
@@ -143,7 +143,7 @@ namespace NetSync.Server
 
         private void OnServerError(string description)
         {
-            Console.WriteLine("Error: " + description);
+            throw new Exception("Error: " + description);
         }
 
         #endregion Transport Events
