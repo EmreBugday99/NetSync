@@ -1,6 +1,4 @@
-﻿using NetSync.Transport;
-
-namespace NetSync.Server
+﻿namespace NetSync.Server
 {
     public class Connection
     {

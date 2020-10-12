@@ -17,8 +17,7 @@ namespace NetSync.Server
         public Connection[] Connections;
 
         public delegate void MessageHandle(Connection connection, Packet packet);
-
-        internal Dictionary<ushort, MessageHandle> ReceiveHandlers = new Dictionary<ushort, MessageHandle>();
+        internal Dictionary<PacketHeader, MessageHandle> ReceiveHandlers = new Dictionary<PacketHeader, MessageHandle>();
 
         internal List<object> NetworkedObjects = new List<object>();
 
@@ -50,6 +49,7 @@ namespace NetSync.Server
             Transport.OnServerDataReceived += ServerDataReceived;
             Transport.OnServerDisconnected += ServerDisconnected;
             Transport.OnServerStopped += ServerStopped;
+            Transport.OnServerError += OnServerError;
 
             ServerThread = new Thread(StartServer) { Priority = threadPriority };
             ServerThread.Start();
@@ -60,9 +60,11 @@ namespace NetSync.Server
             Transport.ServerStart(this);
         }
 
-        public void RegisterHandler(ushort handleId, MessageHandle handler)
+        public void RegisterHandler(byte packetId, MessageHandle handler, byte channel = 1)
         {
-            if (ReceiveHandlers.TryAdd(handleId, handler) == false)
+            PacketHeader packetHeader = new PacketHeader(channel, packetId);
+
+            if (ReceiveHandlers.TryAdd(packetHeader, handler) == false)
             {
                 throw new Exception($"Error while registering handle: {handler.Method.Name}");
             }
@@ -81,7 +83,7 @@ namespace NetSync.Server
 
         #region Network Send
 
-        public void NetworkSendEveryone(ushort packetId, Packet packet, byte channel = 0)
+        public void NetworkSendEveryone(byte packetId, Packet packet, byte channel = 1)
         {
             foreach (var connection in Connections)
             {
@@ -89,7 +91,7 @@ namespace NetSync.Server
             }
         }
 
-        public void NetworkSendMany(Connection[] connections, ushort packetId, Packet packet, byte channel = 0)
+        public void NetworkSendMany(Connection[] connections, byte packetId, Packet packet, byte channel = 1)
         {
             foreach (var connection in connections)
             {
@@ -97,7 +99,7 @@ namespace NetSync.Server
             }
         }
 
-        public void NetworkSend(Connection connection, ushort packetId, Packet packet, byte channel = 0)
+        public void NetworkSend(Connection connection, byte packetId, Packet packet, byte channel = 1)
         {
             if (connection.IsConnected == false) return;
 
@@ -105,8 +107,9 @@ namespace NetSync.Server
             //TODO: UNNECESSARY EXTRA ALLOCATION!
             Packet newPacket = new Packet();
             newPacket.WriteByteArray(packet.GetByteArray());
-            newPacket.InsertUnsignedShort(0, packetId);
-            Transport.ServerSend(connection, newPacket, channel);
+
+            PacketHeader packetHeader = new PacketHeader(channel, packetId);
+            Transport.ServerSend(connection, newPacket, packetHeader);
         }
 
         #endregion Network Send
@@ -123,13 +126,9 @@ namespace NetSync.Server
             connection.IsConnected = true;
         }
 
-        private void ServerDataReceived(Connection connection, Packet packet, byte channel)
+        private void ServerDataReceived(Connection connection, Packet packet, PacketHeader packetHeader)
         {
-            Console.WriteLine("a1");
-            ushort packetId = packet.ReadUnsignedShort();
-            Console.WriteLine("a2");
-            ReceiveHandlers[packetId](connection, packet);
-            Console.WriteLine("a3");
+            ReceiveHandlers[packetHeader](connection, packet);
         }
 
         private void ServerDisconnected(Connection connection)
@@ -142,6 +141,11 @@ namespace NetSync.Server
             IsActive = false;
         }
 
+        private void OnServerError(string description)
+        {
+            Console.WriteLine("Error: " + description);
+        }
+
         #endregion Transport Events
 
         #region Network Object Handling
@@ -152,6 +156,14 @@ namespace NetSync.Server
             Packet packet = new Packet();
             packet.WriteString(typeName);
             NetworkSendEveryone(1, packet);
+        }
+
+        public void CreateNetworkObjectForClient(Connection connection, object objectToCreate)
+        {
+            string typeName = objectToCreate.GetType().AssemblyQualifiedName;
+            Packet packet = new Packet();
+            packet.WriteString(typeName);
+            NetworkSend(connection, 1, packet);
         }
 
         #endregion Network Object Handling

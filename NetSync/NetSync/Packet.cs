@@ -15,7 +15,6 @@ namespace NetSync
         /// </summary>
         public Packet()
         {
-            Console.WriteLine("without data");
             _buffer = new List<byte>();
         }
 
@@ -25,7 +24,6 @@ namespace NetSync
         /// <param name="receivedData">Received data</param>
         public Packet(byte[] receivedData)
         {
-            Console.WriteLine("with data");
             _readBuffer = receivedData;
         }
 
@@ -47,8 +45,7 @@ namespace NetSync
         public void WriteByte(byte data)
             => _buffer.Add(data);
 
-        //TODO: WRITE A SUMMARY
-        public void WriteByteArray(byte[] data) 
+        public void WriteByteArray(byte[] data)
             => _buffer.AddRange(data);
 
         /// <summary>
@@ -155,7 +152,7 @@ namespace NetSync
         public void WriteString(string data)
         {
             _buffer.AddRange(BitConverter.GetBytes(data.Length));
-            _buffer.AddRange(Encoding.UTF8.GetBytes(data));
+            _buffer.AddRange(Encoding.ASCII.GetBytes(data));
         }
 
         /// <summary>
@@ -163,7 +160,7 @@ namespace NetSync
         /// </summary>
         /// <param name="data">Static string to write</param>
         public void WriteStaticString(string data)
-            => _buffer.AddRange(Encoding.UTF8.GetBytes(data));
+            => _buffer.AddRange(Encoding.ASCII.GetBytes(data));
 
         #endregion Write Methods
 
@@ -305,7 +302,7 @@ namespace NetSync
             int dataLength = ReadInteger();
             if (_readBuffer.Length >= _readPosition + dataLength)
             {
-                string returnData = Encoding.UTF8.GetString(_readBuffer, _readPosition, dataLength);
+                string returnData = Encoding.ASCII.GetString(_readBuffer, _readPosition, dataLength);
                 _readPosition += dataLength;
                 return returnData;
             }
@@ -318,7 +315,7 @@ namespace NetSync
             //If there are any bytes left to read in the buffer
             if (_readBuffer.Length >= _readPosition + stringLength)
             {
-                string returnData = Encoding.UTF8.GetString(_readBuffer, _readPosition, stringLength);
+                string returnData = Encoding.ASCII.GetString(_readBuffer, _readPosition, stringLength);
                 _readPosition += stringLength;
                 return returnData;
             }
