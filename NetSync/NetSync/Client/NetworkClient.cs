@@ -16,7 +16,8 @@ namespace NetSync.Client
         public ushort ConnectionId;
 
         public delegate void MessageHandle(Packet packet);
-        internal Dictionary<ushort, MessageHandle> ReceiveHandlers = new Dictionary<ushort, MessageHandle>();
+
+        internal Dictionary<PacketHeader, MessageHandle> ReceiveHandlers = new Dictionary<PacketHeader, MessageHandle>();
 
         public NetworkClient(string ipAddress, int serverPort, int dataBufferSize)
         {
@@ -47,13 +48,16 @@ namespace NetSync.Client
             Transport.OnClientConnected += ClientConnected;
             Transport.OnClientDataReceived += ClientDataReceived;
             Transport.OnClientDisconnected += ClientDisconnected;
+            Transport.OnClientError += OnClientError;
 
-            RegisterHandler(1, ClientSyncNetworkObject);
+            RegisterHandler(1, ClientSyncNetworkObject, 0);
         }
 
-        public void RegisterHandler(ushort handleId, MessageHandle handler)
+        public void RegisterHandler(byte packetId, MessageHandle handler, byte channel = 1)
         {
-            if (ReceiveHandlers.TryAdd(handleId, handler) == false)
+            PacketHeader packetHeader = new PacketHeader(channel, packetId);
+
+            if (ReceiveHandlers.TryAdd(packetHeader, handler) == false)
             {
                 throw new Exception($"Error while registering handle: {handler.Method.Name}");
             }
@@ -70,10 +74,11 @@ namespace NetSync.Client
 
         #endregion Startup / Initialization
 
-        public void NetworkSend(ushort packetId, Packet packet, byte channel = 0)
+        public void NetworkSend(byte packetId, Packet packet, byte channel = 1)
         {
+            PacketHeader packetHeader = new PacketHeader(channel, packetId);
             packet.InsertUnsignedShort(0, packetId);
-            Transport.ClientSendData(packet, channel);
+            Transport.ClientSendData(packet, packetHeader);
         }
 
         #region Transport Events
@@ -82,14 +87,18 @@ namespace NetSync.Client
         {
         }
 
-        private void ClientDataReceived(Packet packet, byte channel)
+        private void ClientDataReceived(Packet packet, PacketHeader packetHeader)
         {
-            ushort packetId = packet.ReadUnsignedShort();
-            ReceiveHandlers[packetId](packet);
+            ReceiveHandlers[packetHeader](packet);
         }
 
         private void ClientDisconnected()
         {
+        }
+
+        private void OnClientError(string description)
+        {
+            Console.WriteLine("Client Error: " + description);
         }
 
         #endregion Transport Events
