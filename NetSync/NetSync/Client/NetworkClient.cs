@@ -13,11 +13,9 @@ namespace NetSync.Client
         internal readonly int ServerPort;
         internal int DataBufferSize;
         internal TransportBase Transport;
-
         public ushort ConnectionId;
 
         public delegate void MessageHandle(Packet packet);
-
         internal Dictionary<ushort, MessageHandle> ReceiveHandlers = new Dictionary<ushort, MessageHandle>();
 
         public NetworkClient(string ipAddress, int serverPort, int dataBufferSize)
@@ -26,6 +24,8 @@ namespace NetSync.Client
             ServerPort = serverPort;
             DataBufferSize = dataBufferSize;
         }
+
+        #region Startup / Initialization
 
         public void ConnectToServer(ThreadPriority threadPriority, TransportBase transport)
         {
@@ -37,11 +37,18 @@ namespace NetSync.Client
 
         private void EstablishConnectionWithServer()
         {
+            InitializeClient();
+
+            Transport.ClientConnect(this);
+        }
+
+        private void InitializeClient()
+        {
             Transport.OnClientConnected += ClientConnected;
             Transport.OnClientDataReceived += ClientDataReceived;
             Transport.OnClientDisconnected += ClientDisconnected;
 
-            Transport.ClientConnect(this);
+            RegisterHandler(1, ClientSyncNetworkObject);
         }
 
         public void RegisterHandler(ushort handleId, MessageHandle handler)
@@ -61,11 +68,15 @@ namespace NetSync.Client
             }
         }
 
+        #endregion Startup / Initialization
+
         public void NetworkSend(ushort packetId, Packet packet, byte channel = 0)
         {
             packet.InsertUnsignedShort(0, packetId);
             Transport.ClientSendData(packet, channel);
         }
+
+        #region Transport Events
 
         private void ClientConnected()
         {
@@ -79,6 +90,15 @@ namespace NetSync.Client
 
         private void ClientDisconnected()
         {
+        }
+
+        #endregion Transport Events
+
+        private void ClientSyncNetworkObject(Packet packet)
+        {
+            string typeName = packet.ReadString();
+            Type type = Type.GetType(typeName, true);
+            Activator.CreateInstance(type);
         }
     }
 }

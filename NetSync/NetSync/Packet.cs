@@ -15,6 +15,7 @@ namespace NetSync
         /// </summary>
         public Packet()
         {
+            Console.WriteLine("without data");
             _buffer = new List<byte>();
         }
 
@@ -24,6 +25,7 @@ namespace NetSync
         /// <param name="receivedData">Received data</param>
         public Packet(byte[] receivedData)
         {
+            Console.WriteLine("with data");
             _readBuffer = receivedData;
         }
 
@@ -44,6 +46,10 @@ namespace NetSync
         /// <param name="data">Byte to write</param>
         public void WriteByte(byte data)
             => _buffer.Add(data);
+
+        //TODO: WRITE A SUMMARY
+        public void WriteByteArray(byte[] data) 
+            => _buffer.AddRange(data);
 
         /// <summary>
         /// Inserts byte into specified index of the buffer.
