@@ -51,6 +51,7 @@ namespace NetSync.Transport.SyncTcp
             try
             {
                 int byteLength = _netStream.EndRead(result);
+                Console.WriteLine("I received something: " + byteLength);
                 if (byteLength <= 0)
                 {
                     ClientDisconnect();
@@ -60,31 +61,23 @@ namespace NetSync.Transport.SyncTcp
                 byte[] data = new byte[byteLength];
                 Array.Copy(_receiveBuffer, data, byteLength);
                 _netStream.BeginRead(_receiveBuffer, 0, _bufferSize, ReceiveCallback, null);
-
                 Packet packet = new Packet(data);
                 OnClientDataReceive(packet, 0);
             }
-            catch
+            catch (Exception exception)
             {
                 ClientDisconnect();
-                throw new Exception("Error while receiving data from server!");
+                throw new Exception($"Error while receiving data from server! {exception}");
             }
         }
 
         public override void ClientDisconnect()
         {
             if (_tcpClient != null)
-            {
                 _tcpClient.Close();
-                _tcpClient = null;
-            }
 
-            if (_netStream != null)
-            {
-                _netStream.Close();
-                _netStream = null;
-            }
-
+            _tcpClient = null;
+            _netStream = null;
             _receiveBuffer = null;
             OnClientDisconnect();
         }
@@ -134,6 +127,7 @@ namespace NetSync.Transport.SyncTcp
                 ushort connectionId = connection.ConnectionId;
                 _serverConnections[connectionId] = new ServerConnection(tcpClient, _bufferSize, this, connection);
                 OnServerConnect(connection);
+                break;
             }
         }
 
@@ -149,8 +143,7 @@ namespace NetSync.Transport.SyncTcp
 
         public override void ServerSend(Connection connection, Packet packet, byte channel)
         {
-            if (_serverConnections[connection.ConnectionId] != null)
-                _serverConnections[connection.ConnectionId].ServerSend(packet);
+            _serverConnections[connection.ConnectionId].ServerSend(packet);
         }
 
         public override void ServerStop()
@@ -227,7 +220,6 @@ namespace NetSync.Transport.SyncTcp
             internal void Disconnect()
             {
                 _tcpClient.Close();
-                _netStream.Close();
                 _receiveBuffer = null;
                 _tcpClient = null;
                 _netStream = null;

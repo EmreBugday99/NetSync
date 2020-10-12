@@ -14,23 +14,25 @@ namespace NetSync.Server
         internal readonly int DataBufferSize;
         internal TransportBase Transport;
         public bool IsActive;
-
-        //public Dictionary<int, Connection> Connections = new Dictionary<int, Connection>();
         public Connection[] Connections;
 
         public delegate void MessageHandle(Connection connection, Packet packet);
 
         internal Dictionary<ushort, MessageHandle> ReceiveHandlers = new Dictionary<ushort, MessageHandle>();
 
+        internal List<object> NetworkedObjects = new List<object>();
+
+        #region Startup / Initialization
+
         public NetworkServer(int serverPort, ushort maxConnections, int dataBufferSize)
         {
             ServerPort = serverPort;
             _maxConnections = maxConnections;
             DataBufferSize = dataBufferSize;
-            InitializeServerData();
+            InitializeServer();
         }
 
-        private void InitializeServerData()
+        private void InitializeServer()
         {
             Connections = new Connection[_maxConnections];
             for (ushort i = 0; i < Connections.Length; i++)
@@ -75,57 +77,83 @@ namespace NetSync.Server
             }
         }
 
+        #endregion Startup / Initialization
+
+        #region Network Send
+
         public void NetworkSendEveryone(ushort packetId, Packet packet, byte channel = 0)
         {
-            packet.InsertUnsignedShort(0, packetId);
             foreach (var connection in Connections)
             {
-                Transport.ServerSend(connection, packet, channel);
+                NetworkSend(connection, packetId, packet, channel);
             }
         }
 
         public void NetworkSendMany(Connection[] connections, ushort packetId, Packet packet, byte channel = 0)
         {
-            packet.InsertUnsignedShort(0, packetId);
             foreach (var connection in connections)
             {
-                Transport.ServerSend(connection, packet, channel);
+                NetworkSend(connection, packetId, packet, channel);
             }
         }
 
         public void NetworkSend(Connection connection, ushort packetId, Packet packet, byte channel = 0)
         {
-            packet.InsertUnsignedShort(0, packetId);
-            Transport.ServerSend(connection, packet, channel);
+            if (connection.IsConnected == false) return;
+
+            //TODO: FIX THIS MESS HERE! WE SHOULD NOT ALLOCATE 2 PACKETS FOR SENDING.
+            //TODO: UNNECESSARY EXTRA ALLOCATION!
+            Packet newPacket = new Packet();
+            newPacket.WriteByteArray(packet.GetByteArray());
+            newPacket.InsertUnsignedShort(0, packetId);
+            Transport.ServerSend(connection, newPacket, channel);
         }
 
-        public void NetworkSend(ushort connectionId, ushort packetId, Packet packet, byte channel = 0)
-        {
-            packet.InsertUnsignedShort(0, packetId);
-            Connection connection = Connections[connectionId];
-            Transport.ServerSend(connection, packet, channel);
-        }
+        #endregion Network Send
+
+        #region Transport Events
 
         private void ServerStarted(NetworkServer server)
         {
+            IsActive = true;
         }
 
         private void ServerConnected(Connection connection)
         {
+            connection.IsConnected = true;
         }
 
         private void ServerDataReceived(Connection connection, Packet packet, byte channel)
         {
+            Console.WriteLine("a1");
             ushort packetId = packet.ReadUnsignedShort();
+            Console.WriteLine("a2");
             ReceiveHandlers[packetId](connection, packet);
+            Console.WriteLine("a3");
         }
 
         private void ServerDisconnected(Connection connection)
         {
+            connection.IsConnected = false;
         }
 
         private void ServerStopped(NetworkServer server)
         {
+            IsActive = false;
         }
+
+        #endregion Transport Events
+
+        #region Network Object Handling
+
+        public void CreateNetworkObject(object objectToCreate)
+        {
+            string typeName = objectToCreate.GetType().AssemblyQualifiedName;
+            Packet packet = new Packet();
+            packet.WriteString(typeName);
+            NetworkSendEveryone(1, packet);
+        }
+
+        #endregion Network Object Handling
     }
 }
