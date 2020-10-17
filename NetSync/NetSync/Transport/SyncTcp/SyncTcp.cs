@@ -193,6 +193,12 @@ namespace NetSync.Transport.SyncTcp
             {
                 try
                 {
+                    if (_netStream == null)
+                    {
+                        _connection.Disconnect();
+                        return;
+                    }
+
                     int byteLength = _netStream.EndRead(result);
                     if (byteLength <= 0)
                     {
