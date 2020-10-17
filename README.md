@@ -35,7 +35,7 @@ NetSync uses a handle system(it's just a random name I've come up with for the s
 You can subscribe your handlers for networked events and listen to them. When a networked event happens it will invoke your handle if it was subscribed.
 <br>
 ## Network Objects
-NetSync has a feature called Network Objects which lets server create an identical class on all clients on runtime.
+NetSync has a feature called Network Objects which lets server create an identical class on all clients on runtime. This ensures easier synchronization between server & client.
 <br>
 For safety reasons class/object creation over network is restricted only to server. 
 <br>
