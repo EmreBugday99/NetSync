@@ -34,6 +34,13 @@ NetSync uses a handle system(it's just a random name I've come up with for the s
 <br>
 You can subscribe your handlers for networked events and listen to them. When a networked event happens it will invoke your handle if it was subscribed.
 <br>
+## Network Objects
+NetSync has a feature called Network Objects which lets server create an identical class on all clients on runtime.
+<br>
+For safety reasons class/object creation over network is restricted only to server. 
+<br>
+If server creates a Network Object all clients will create that same class as server.
+<br>
 
 ## Multi Channel Support
 NetSync supports multi channel system integration. Channels are a great way to categorize your packets according to your needs. 
