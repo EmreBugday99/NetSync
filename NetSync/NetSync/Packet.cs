@@ -4,7 +4,7 @@ using System.Text;
 
 namespace NetSync
 {
-    public class Packet
+    public class Packet : IDisposable
     {
         private List<byte> _buffer;
         private byte[] _readBuffer;
@@ -45,6 +45,10 @@ namespace NetSync
         public void WriteByte(byte data)
             => _buffer.Add(data);
 
+        /// <summary>
+        /// Writes a full byte array into the packet buffer.
+        /// </summary>
+        /// <param name="data">Byte array to write.</param>
         public void WriteByteArray(byte[] data)
             => _buffer.AddRange(data);
 
@@ -166,6 +170,10 @@ namespace NetSync
 
         #region Read Methods
 
+        /// <summary>
+        /// Reads a byte from the read buffer.
+        /// </summary>
+        /// <returns>Read byte</returns>
         public byte ReadByte()
         {
             if (_readBuffer.Length >= _readPosition + 1)
@@ -178,6 +186,10 @@ namespace NetSync
             throw new Exception("Error while reading Int16 from buffer!");
         }
 
+        /// <summary>
+        /// Reads a boolean from the buffer.
+        /// </summary>
+        /// <returns>Read boolean</returns>
         public bool ReadBool()
         {
             if (_readBuffer.Length >= _readPosition + 1)
@@ -192,6 +204,10 @@ namespace NetSync
             throw new Exception("Error while reading Boolean from buffer!");
         }
 
+        /// <summary>
+        /// Reads a short (16 bit) from the buffer.
+        /// </summary>
+        /// <returns>Read short</returns>
         public short ReadShort()
         {
             //If there are any bytes left to read in the buffer
@@ -205,6 +221,10 @@ namespace NetSync
             throw new Exception("Error while reading Int16 from buffer!");
         }
 
+        /// <summary>
+        /// Reads an unsigned short (16 bit) from the buffer.
+        /// </summary>
+        /// <returns>Read unsigned short</returns>
         public ushort ReadUnsignedShort()
         {
             //If there are any bytes left to read in the buffer
@@ -218,6 +238,10 @@ namespace NetSync
             throw new Exception("Error while reading UInt16 from buffer!");
         }
 
+        /// <summary>
+        /// Reads an integer (32 bit) from the buffer.
+        /// </summary>
+        /// <returns>Read integer</returns>
         public int ReadInteger()
         {
             //If there are any bytes left to read in the buffer
@@ -231,6 +255,10 @@ namespace NetSync
             throw new Exception("Error while reading Int32 from buffer!");
         }
 
+        /// <summary>
+        /// Reads an unsigned integer (32 bit) from buffer
+        /// </summary>
+        /// <returns>Read unsigned integer</returns>
         public uint ReadUnsignedInteger()
         {
             //If there are any bytes left to read in the buffer
@@ -244,6 +272,10 @@ namespace NetSync
             throw new Exception("Error while reading UInt32 from buffer!");
         }
 
+        /// <summary>
+        /// Reads a long (64 bit) from buffer
+        /// </summary>
+        /// <returns>Read long</returns>
         public long ReadLong()
         {
             //If there are any bytes left to read in the buffer
@@ -257,6 +289,10 @@ namespace NetSync
             throw new Exception("Error while reading Int64 from buffer!");
         }
 
+        /// <summary>
+        /// Reads an unsigned long (64 bit) from buffer.
+        /// </summary>
+        /// <returns>Read unsigned long</returns>
         public ulong ReadUnsignedLong()
         {
             //If there are any bytes left to read in the buffer
@@ -270,6 +306,10 @@ namespace NetSync
             throw new Exception("Error while reading UInt64 from buffer!");
         }
 
+        /// <summary>
+        /// Reads a float from buffer
+        /// </summary>
+        /// <returns>Read float</returns>
         public float ReadFloat()
         {
             //If there are any bytes left to read in the buffer
@@ -283,6 +323,10 @@ namespace NetSync
             throw new Exception("Error while reading Float from buffer!");
         }
 
+        /// <summary>
+        /// Reads a double from buffer
+        /// </summary>
+        /// <returns>Read double</returns>
         public double ReadDouble()
         {
             //If there are any bytes left to read in the buffer
@@ -296,6 +340,14 @@ namespace NetSync
             throw new Exception("Error while reading Double from buffer!");
         }
 
+        /// <summary>
+        /// Reads a dynamic string from buffer.
+        /// Length of the string is not known from beforehand therefore
+        /// the length is written into the buffer as an int.
+        /// This increases the packet size therefore if the length is known beforehand
+        /// Read/Write Static String should be used instead to reduce overhead.
+        /// </summary>
+        /// <returns></returns>
         public string ReadString()
         {
             //If there are any bytes left to read in the buffer
@@ -310,6 +362,12 @@ namespace NetSync
             throw new Exception("Error while reading String from buffer!");
         }
 
+        /// <summary>
+        /// Reads a static string from buffer where the
+        /// length of the string is known beforehand.
+        /// </summary>
+        /// <param name="stringLength">Length of th string</param>
+        /// <returns>Read string</returns>
         public string ReadStaticString(int stringLength)
         {
             //If there are any bytes left to read in the buffer
@@ -324,5 +382,28 @@ namespace NetSync
         }
 
         #endregion Read Methods
+
+        private bool _isDisposed = false;
+
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (_isDisposed == false)
+            {
+                if (isDisposing)
+                    _buffer.Clear();
+
+                _readPosition = 0;
+                _readBuffer = null;
+                _buffer = null;
+            }
+
+            _isDisposed = true;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
     }
 }
