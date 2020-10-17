@@ -37,7 +37,7 @@ You can subscribe your handlers for networked events and listen to them. When a 
 ## Network Objects
 NetSync has a feature called Network Objects which lets server create an identical class on all clients on runtime. This ensures easier synchronization between server & client.
 <br>
-For safety reasons class/object creation over network is restricted only to server. 
+For safety reasons class/object creation initialization over network is restricted only to server. Clients are only recipients not initiators.
 <br>
 If server creates a Network Object all clients will create that same class as server.
 <br>
