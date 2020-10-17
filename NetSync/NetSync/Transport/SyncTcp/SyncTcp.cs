@@ -75,35 +75,31 @@ namespace NetSync.Transport.SyncTcp
             }
         }
 
-        public override void ClientDisconnect()
-        {
-            if (_tcpClient != null)
-            {
-                _tcpClient.Client?.Disconnect(true);
-                _tcpClient.Close();
-            }
-
-            _tcpClient = null;
-            _netStream = null;
-            _receiveBuffer = null;
-            OnClientDisconnect();
-        }
-
         public override void ClientSendData(Packet packet, PacketHeader packetHeader)
         {
             try
             {
-                if (_tcpClient == null) return;
                 packet.InsertByte(0, packetHeader.Channel);
                 packet.InsertByte(1, packetHeader.PacketId);
                 byte[] data = packet.GetByteArray();
 
                 _netStream.BeginWrite(data, 0, data.Length, null, null);
             }
-            catch
+            catch (Exception exception)
             {
-                throw new Exception("Error while sending data to server!");
+                ClientDisconnect();
+                OnClientErrorDetected($"Error while sending data to server! {exception}");
             }
+        }
+
+        public override void ClientDisconnect()
+        {
+            _tcpClient.Client?.Disconnect(true);
+            _tcpClient?.Close();
+            _tcpClient = null;
+            _netStream = null;
+            _receiveBuffer = null;
+            OnClientDisconnect();
         }
 
         #endregion Client
@@ -134,6 +130,7 @@ namespace NetSync.Transport.SyncTcp
                 if (connection.IsConnected) continue;
 
                 ushort connectionId = connection.ConnectionId;
+                connection.UAI = tcpClient.Client.RemoteEndPoint.ToString();
                 _serverConnections[connectionId] = new ServerConnection(tcpClient, _bufferSize, this, connection);
                 OnServerConnect(connection);
                 break;
@@ -214,8 +211,8 @@ namespace NetSync.Transport.SyncTcp
                 }
                 catch (Exception exception)
                 {
-                    _syncTcp.OnServerErrorDetected($"Error while receiving data from client [{_connection.ConnectionId}] : " + exception);
                     _connection.Disconnect();
+                    _syncTcp.OnServerErrorDetected($"Error while receiving data from client [{_connection.ConnectionId}] : " + exception);
                 }
             }
 
@@ -223,19 +220,21 @@ namespace NetSync.Transport.SyncTcp
             {
                 try
                 {
+
                     byte[] data = packet.GetByteArray();
                     _netStream.BeginWrite(data, 0, data.Length, null, null);
                 }
-                catch
+                catch (Exception exception)
                 {
-                    throw new Exception("Error while sending data to client!");
+                    _connection.Disconnect();
+                    _syncTcp.OnServerErrorDetected(
+                        $"Error while sending data to client: {exception}");
                 }
             }
 
             internal void Disconnect()
             {
-                _tcpClient.Client.Disconnect(true);
-                _tcpClient.Close();
+                _tcpClient?.Close();
                 _receiveBuffer = null;
                 _tcpClient = null;
                 _netStream = null;

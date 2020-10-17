@@ -1,9 +1,9 @@
 ﻿namespace NetSync
 {
-    public struct PacketHeader
+    public readonly struct PacketHeader
     {
-        public byte Channel;
-        public byte PacketId;
+        public readonly byte Channel;
+        public readonly byte PacketId;
 
         public PacketHeader(byte channel, byte packetId)
         {

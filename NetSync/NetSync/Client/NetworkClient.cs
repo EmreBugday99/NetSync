@@ -14,23 +14,41 @@ namespace NetSync.Client
         internal int DataBufferSize;
         internal TransportBase Transport;
         public ushort ConnectionId;
+        public bool IsActive;
 
         public delegate void MessageHandle(Packet packet);
 
-        internal Dictionary<PacketHeader, MessageHandle> ReceiveHandlers = new Dictionary<PacketHeader, MessageHandle>();
+        private Dictionary<PacketHeader, ClientHandle> ReceiveHandlers = new Dictionary<PacketHeader, ClientHandle>();
 
-        public NetworkClient(string ipAddress, int serverPort, int dataBufferSize)
-        {
-            ServerIp = ipAddress;
-            ServerPort = serverPort;
-            DataBufferSize = dataBufferSize;
-        }
+        private List<ClientQueueHandle> _clientQueueHandlers = new List<ClientQueueHandle>();
+        internal object QueueLock = new object();
+
+        #region Events
+
+        public delegate void NetworkClientConnected();
+        public event NetworkClientConnected OnClientConnected;
+
+        public delegate void NetworkClientDisconnected();
+        public event NetworkClientDisconnected OnClientDisconnected;
+
+        public delegate void NetworkClientError(string description);
+        public event NetworkClientError OnClientErrorDetected;
+
+        #endregion Events
 
         #region Startup / Initialization
 
-        public void ConnectToServer(ThreadPriority threadPriority, TransportBase transport)
+        public NetworkClient(string ipAddress, int serverPort, int dataBufferSize, TransportBase transport)
         {
+            IsActive = false;
+            ServerIp = ipAddress;
+            ServerPort = serverPort;
+            DataBufferSize = dataBufferSize;
             Transport = transport;
+        }
+
+        public void ConnectToServer(ThreadPriority threadPriority = ThreadPriority.Normal)
+        {
             ClientThread = new Thread(EstablishConnectionWithServer);
             ClientThread.Priority = threadPriority;
             ClientThread.Start();
@@ -53,20 +71,21 @@ namespace NetSync.Client
             RegisterHandler(1, ClientSyncNetworkObject, 0);
         }
 
-        public void RegisterHandler(byte packetId, MessageHandle handler, byte channel = 1)
+        public void RegisterHandler(byte packetId, MessageHandle handler, byte channel = 1, bool queue = false)
         {
             PacketHeader packetHeader = new PacketHeader(channel, packetId);
-            if(ReceiveHandlers.ContainsKey(packetHeader))
+            ClientHandle clientHandle = new ClientHandle(handler, queue);
+            if (ReceiveHandlers.ContainsKey(packetHeader))
                 throw new Exception($"Handler is already registered: {handler.Method.Name}");
 
-            ReceiveHandlers.Add(packetHeader, handler);
+            ReceiveHandlers.Add(packetHeader, clientHandle);
         }
 
         public void RemoveHandler(MessageHandle handler)
         {
             foreach (var msgHandler in ReceiveHandlers)
             {
-                if (msgHandler.Value.Method.Name == handler.Method.Name)
+                if (msgHandler.Value.Handle.Method.Name == handler.Method.Name)
                     ReceiveHandlers.Remove(msgHandler.Key);
             }
         }
@@ -77,29 +96,57 @@ namespace NetSync.Client
         {
             PacketHeader packetHeader = new PacketHeader(channel, packetId);
             Transport.ClientSendData(packet, packetHeader);
+            packet.Dispose();
         }
 
         #region Transport Events
 
         private void ClientConnected()
         {
+            IsActive = true;
+            OnClientConnected?.Invoke();
         }
 
         private void ClientDataReceived(Packet packet, PacketHeader packetHeader)
         {
-            ReceiveHandlers[packetHeader](packet);
+            if (ReceiveHandlers[packetHeader].IsQueued)
+            {
+                ClientQueueHandle queueHandle = new ClientQueueHandle(packet, ReceiveHandlers[packetHeader]);
+                lock (QueueLock)
+                {
+                    _clientQueueHandlers.Add(queueHandle);
+                }
+                return;
+            }
+
+            ReceiveHandlers[packetHeader].Handle(packet);
         }
 
         private void ClientDisconnected()
         {
+            IsActive = false;
+            OnClientDisconnected?.Invoke();
         }
 
         private void OnClientError(string description)
         {
-            throw new Exception("Client Error: " + description);
+            Console.WriteLine(description);
+            OnClientErrorDetected?.Invoke(description);
         }
 
         #endregion Transport Events
+
+        public void ExecuteHandleQueue()
+        {
+            lock (QueueLock)
+            {
+                for (int i = 0; i < _clientQueueHandlers.Count; i++)
+                {
+                    _clientQueueHandlers[i].Handle.Handle(_clientQueueHandlers[i].ReceivedPacket);
+                    _clientQueueHandlers.RemoveAt(i);
+                }
+            }
+        }
 
         private void ClientSyncNetworkObject(Packet packet)
         {

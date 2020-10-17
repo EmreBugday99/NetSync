@@ -3,6 +3,11 @@
     public class Connection
     {
         public readonly ushort ConnectionId;
+        /// <summary>
+        /// In most cases this will be the connection ip.
+        /// Stands for Unique Address Identifier
+        /// </summary>
+        public string UAI;
         public bool IsConnected;
         public readonly NetworkServer ServerInstance;
 
