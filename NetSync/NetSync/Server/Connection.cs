@@ -1,4 +1,6 @@
-﻿namespace NetSync.Server
+﻿using System;
+
+namespace NetSync.Server
 {
     public class Connection
     {
@@ -9,7 +11,10 @@
         /// </summary>
         public string UAI;
         public bool IsConnected;
+        public bool HandshakeCompleted;
         public readonly NetworkServer ServerInstance;
+
+        internal object ConnectionLock = new object();
 
         public Connection(ushort id, NetworkServer serverInstance)
         {
@@ -23,8 +28,12 @@
         /// </summary>
         public void Disconnect()
         {
-            IsConnected = false;
-            ServerInstance.Transport.ServerDisconnect(this);
+            lock (ConnectionLock)
+            {
+                IsConnected = false;
+                HandshakeCompleted = false;
+                ServerInstance.Transport.ServerDisconnect(this);
+            }
         }
     }
 }

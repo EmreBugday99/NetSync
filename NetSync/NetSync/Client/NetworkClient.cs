@@ -15,6 +15,7 @@ namespace NetSync.Client
         internal TransportBase Transport;
         public ushort ConnectionId;
         public bool IsActive;
+        public bool HandshakeCompleted;
 
         public delegate void MessageHandle(Packet packet);
 
@@ -26,13 +27,28 @@ namespace NetSync.Client
         #region Events
 
         public delegate void NetworkClientConnected();
+        /// <summary>
+        /// Called after client establishes connection with server.
+        /// </summary>
         public event NetworkClientConnected OnClientConnected;
 
         public delegate void NetworkClientDisconnected();
+        /// <summary>
+        /// Called after Client disconnects from server.
+        /// </summary>
         public event NetworkClientDisconnected OnClientDisconnected;
 
         public delegate void NetworkClientError(string description);
+        /// <summary>
+        /// Called after the Transport throws an error.
+        /// </summary>
         public event NetworkClientError OnClientErrorDetected;
+
+        public delegate void NetworkClientHandshakeCompleted(ushort connectionId);
+        /// <summary>
+        /// Called after client successfully finishes the handshake with server.
+        /// </summary>
+        public event NetworkClientHandshakeCompleted OnHandshakeCompleted;
 
         #endregion Events
 
@@ -68,7 +84,9 @@ namespace NetSync.Client
             Transport.OnClientDisconnected += ClientDisconnected;
             Transport.OnClientError += OnClientError;
 
-            RegisterHandler(1, ClientSyncNetworkObject, 0);
+            RegisterHandler((byte)Packets.Handshake, ClientHandshakeReceived, 0);
+            RegisterHandler((byte)Packets.SuccessfulHandshake, ClientSuccessfulHandshakeReceived, 0);
+            RegisterHandler((byte)Packets.SyncNetworkObject, ClientSyncNetworkObject, 0);
         }
 
         public void RegisterHandler(byte packetId, MessageHandle handler, byte channel = 1, bool queue = false)
@@ -99,7 +117,7 @@ namespace NetSync.Client
             packet.Dispose();
         }
 
-        #region Transport Events
+        #region Client Events
 
         private void ClientConnected()
         {
@@ -134,8 +152,32 @@ namespace NetSync.Client
             OnClientErrorDetected?.Invoke(description);
         }
 
-        #endregion Transport Events
+        private void OnHandshakeDone(ushort connectionId)
+            => OnHandshakeCompleted?.Invoke(connectionId);
 
+        #endregion Client Events
+
+        private void ClientHandshakeReceived(Packet packet)
+        {
+            ushort connectionId = packet.ReadUnsignedShort();
+            ConnectionId = connectionId;
+
+            Packet handshakePacket = new Packet();
+            handshakePacket.WriteUnsignedShort(connectionId);
+
+            NetworkSend((byte)Packets.Handshake, handshakePacket, 0);
+        }
+
+        private void ClientSuccessfulHandshakeReceived(Packet packet)
+        {
+            HandshakeCompleted = true;
+            ushort connectionId = packet.ReadUnsignedShort();
+            OnHandshakeDone(connectionId);
+        }
+
+        /// <summary>
+        /// Executes all the queued handlers. Useful for single threaded applications.
+        /// </summary>
         public void ExecuteHandleQueue()
         {
             lock (QueueLock)
