@@ -3,7 +3,7 @@ A fully dynamic, high performant networking library for games and applications.
 
 
 ## Dynamic? How?
-NetSync has a really dynamic protocol implementation process built in. All you have to do is override the TransportBase class and viola! Check [SyncTcp](https://github.com/EmreBugday99/NetSync/blob/main/NetSync/NetSync/Transport/SyncTcp/SyncTcp.cs) implementation for example.
+NetSync has a really dynamic protocol implementation process built in. All you have to do is override the TransportBase class and viola! Check [AsyncTcp](https://github.com/EmreBugday99/NetSync/blob/main/NetSync/NetSync/Transport/AsyncTcp/AsyncTcp.cs) implementation for example.
 <br>
 Each NetworkClient and NetworkServer can use any protocol implementation they want. 
 <br>
