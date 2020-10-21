@@ -1,4 +1,6 @@
-﻿namespace NetSync.Server
+﻿using System;
+
+namespace NetSync.Server
 {
     public class Connection
     {
@@ -7,15 +9,27 @@
         /// In most cases this will be the connection ip.
         /// Stands for Unique Address Identifier
         /// </summary>
-        public string UAI;
-        public bool IsConnected;
-        public readonly NetworkServer ServerInstance;
+        internal string UAI;
+        internal bool IsConnected;
+        internal bool HandshakeCompleted;
+        private readonly NetworkServer _serverInstance;
+
+        internal object ConnectionLock = new object();
 
         public Connection(ushort id, NetworkServer serverInstance)
         {
-            ServerInstance = serverInstance;
+            _serverInstance = serverInstance;
             IsConnected = false;
             ConnectionId = id;
+        }
+
+        /// <summary>
+        /// In most cases this will be the connection's remote end-point.
+        /// </summary>
+        /// <returns>Unique Address Identifier</returns>
+        public string GetUniqueAddress()
+        {
+            return UAI;
         }
 
         /// <summary>
@@ -23,8 +37,13 @@
         /// </summary>
         public void Disconnect()
         {
-            IsConnected = false;
-            ServerInstance.Transport.ServerDisconnect(this);
+            lock (ConnectionLock)
+            {
+                IsConnected = false;
+                HandshakeCompleted = false;
+                UAI = string.Empty;
+                _serverInstance.Transport.ServerDisconnect(this);
+            }
         }
     }
 }

@@ -4,9 +4,9 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 
-namespace NetSync.Transport.SyncTcp
+namespace NetSync.Transport.AsyncTcp
 {
-    public class SyncTcp : TransportBase
+    public class AsyncTcp : TransportBase
     {
         private TcpClient _tcpClient;
         private TcpListener _tcpListener;
@@ -94,11 +94,10 @@ namespace NetSync.Transport.SyncTcp
 
         public override void ClientDisconnect()
         {
-            _tcpClient.Client?.Disconnect(true);
             _tcpClient?.Close();
-            _tcpClient = null;
-            _netStream = null;
             _receiveBuffer = null;
+            _netStream = null;
+            _tcpClient = null;
             OnClientDisconnect();
         }
 
@@ -129,9 +128,8 @@ namespace NetSync.Transport.SyncTcp
             {
                 if (connection.IsConnected) continue;
 
-                ushort connectionId = connection.ConnectionId;
+                _serverConnections[connection.ConnectionId] = new ServerConnection(tcpClient, _bufferSize, this, connection);
                 connection.UAI = tcpClient.Client.RemoteEndPoint.ToString();
-                _serverConnections[connectionId] = new ServerConnection(tcpClient, _bufferSize, this, connection);
                 OnServerConnect(connection);
                 break;
             }
@@ -140,9 +138,7 @@ namespace NetSync.Transport.SyncTcp
         public override void ServerDisconnect(Connection connection)
         {
             if (_serverConnections[connection.ConnectionId] == null) return;
-
             _serverConnections[connection.ConnectionId].Disconnect();
-            connection.IsConnected = false;
             _serverConnections[connection.ConnectionId] = null;
             OnServerDisconnect(connection);
         }
@@ -173,9 +169,9 @@ namespace NetSync.Transport.SyncTcp
             private byte[] _receiveBuffer;
 
             private Connection _connection;
-            private SyncTcp _syncTcp;
+            private AsyncTcp _syncTcp;
 
-            internal ServerConnection(TcpClient tcpClient, int bufferSize, SyncTcp syncTcp, Connection connection)
+            internal ServerConnection(TcpClient tcpClient, int bufferSize, AsyncTcp syncTcp, Connection connection)
             {
                 _syncTcp = syncTcp;
                 _connection = connection;
@@ -226,7 +222,6 @@ namespace NetSync.Transport.SyncTcp
             {
                 try
                 {
-
                     byte[] data = packet.GetByteArray();
                     _netStream.BeginWrite(data, 0, data.Length, null, null);
                 }
@@ -240,10 +235,17 @@ namespace NetSync.Transport.SyncTcp
 
             internal void Disconnect()
             {
+                _tcpClient?.Client?.Disconnect(true);
                 _tcpClient?.Close();
                 _receiveBuffer = null;
                 _tcpClient = null;
                 _netStream = null;
+
+                lock (_connection.ConnectionLock)
+                {
+                    _connection.IsConnected = false;
+                    _connection.HandshakeCompleted = false;
+                }
             }
         }
 
