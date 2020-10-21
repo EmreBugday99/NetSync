@@ -17,12 +17,17 @@ namespace NetSync.Server
         public Connection[] Connections;
 
         public delegate void MessageHandle(Connection connection, Packet packet);
-
         private Dictionary<PacketHeader, ServerHandle> ReceiveHandlers = new Dictionary<PacketHeader, ServerHandle>();
 
+        /// <summary>
+        /// Server side handler queue for single threaded applications.
+        /// </summary>
         private List<ServerQueueHandle> _serverHandleQueue = new List<ServerQueueHandle>();
         internal object QueueLock = new object();
 
+        /// <summary>
+        /// Network synced objects
+        /// </summary>
         internal List<object> NetworkedObjects = new List<object>();
 
         #region Events
@@ -56,6 +61,9 @@ namespace NetSync.Server
             Transport = transport;
         }
 
+        /// <summary>
+        /// Setups the server. Runs before Start
+        /// </summary>
         private void InitializeServer()
         {
             Connections = new Connection[_maxConnections];
@@ -65,6 +73,10 @@ namespace NetSync.Server
             }
         }
 
+        /// <summary>
+        /// Starts the server and begins listening for new connections.
+        /// </summary>
+        /// <param name="threadPriority"></param>
         public void Start(ThreadPriority threadPriority = ThreadPriority.Normal)
         {
             Transport.OnServerStarted += ServerStarted;
@@ -83,6 +95,13 @@ namespace NetSync.Server
             Transport.ServerStart(this);
         }
 
+        /// <summary>
+        /// Registers a handler for a packet.
+        /// </summary>
+        /// <param name="packetId">Packet Id to create a handler for</param>
+        /// <param name="handler">Handler to execute when packet gets received</param>
+        /// <param name="channel">Which channel this packet is using in network</param>
+        /// <param name="queue">Will this handle be registered as queued (for single threaded applications)</param>
         public void RegisterHandler(byte packetId, MessageHandle handler, byte channel = 1, bool queue = false)
         {
             PacketHeader packetHeader = new PacketHeader(channel, packetId);
@@ -94,6 +113,10 @@ namespace NetSync.Server
             ReceiveHandlers.Add(packetHeader, serverHandle);
         }
 
+        /// <summary>
+        /// Removes a handler from registered handlers list
+        /// </summary>
+        /// <param name="handler">Specific handler to remove</param>
         public void RemoveHandler(MessageHandle handler)
         {
             foreach (var handle in ReceiveHandlers)
@@ -189,6 +212,9 @@ namespace NetSync.Server
 
         #endregion Transport Events
 
+        /// <summary>
+        /// Executes all the queued handlers. Useful for single threaded applications.
+        /// </summary>
         public void ExecuteHandleQueue()
         {
             lock (QueueLock)
@@ -203,6 +229,10 @@ namespace NetSync.Server
 
         #region Network Object Handling
 
+        /// <summary>
+        /// Creates a networked object for everyone
+        /// </summary>
+        /// <param name="objectToCreate">What class/object to create on all clients</param>
         public void CreateNetworkObject(object objectToCreate)
         {
             string typeName = objectToCreate.GetType().AssemblyQualifiedName;
@@ -211,6 +241,11 @@ namespace NetSync.Server
             NetworkSendEveryone(1, packet);
         }
 
+        /// <summary>
+        /// Creates a networked object for a specific client
+        /// </summary>
+        /// <param name="connection">Client's connection</param>
+        /// <param name="objectToCreate">Which networked object/class to create</param>
         public void CreateNetworkObjectForClient(Connection connection, object objectToCreate)
         {
             string typeName = objectToCreate.GetType().AssemblyQualifiedName;
