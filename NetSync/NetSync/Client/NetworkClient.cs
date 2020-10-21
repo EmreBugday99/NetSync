@@ -7,15 +7,13 @@ namespace NetSync.Client
 {
     public class NetworkClient
     {
-        public Thread ClientThread;
-
         internal readonly string ServerIp;
         internal readonly int ServerPort;
-        internal int DataBufferSize;
-        internal TransportBase Transport;
-        public ushort ConnectionId;
-        public bool IsActive;
-        public bool HandshakeCompleted;
+        internal readonly int DataBufferSize;
+        private readonly TransportBase _transport;
+        private ushort _connectionId;
+        private bool _connected;
+        private bool _handshakeCompleted;
 
         public delegate void MessageHandle(Packet packet);
 
@@ -56,33 +54,30 @@ namespace NetSync.Client
 
         public NetworkClient(string ipAddress, int serverPort, int dataBufferSize, TransportBase transport)
         {
-            IsActive = false;
+            _connected = false;
             ServerIp = ipAddress;
             ServerPort = serverPort;
             DataBufferSize = dataBufferSize;
-            Transport = transport;
+            _transport = transport;
         }
 
-        public void ConnectToServer(ThreadPriority threadPriority = ThreadPriority.Normal)
-        {
-            ClientThread = new Thread(EstablishConnectionWithServer);
-            ClientThread.Priority = threadPriority;
-            ClientThread.Start();
-        }
-
-        private void EstablishConnectionWithServer()
+        public void StartClient()
         {
             InitializeClient();
+            _transport.ClientConnect(this);
+        }
 
-            Transport.ClientConnect(this);
+        public void StopClient()
+        {
+            _transport.ClientDisconnect();
         }
 
         private void InitializeClient()
         {
-            Transport.OnClientConnected += ClientConnected;
-            Transport.OnClientDataReceived += ClientDataReceived;
-            Transport.OnClientDisconnected += ClientDisconnected;
-            Transport.OnClientError += OnClientError;
+            _transport.OnClientConnected += ClientConnected;
+            _transport.OnClientDataReceived += ClientDataReceived;
+            _transport.OnClientDisconnected += ClientDisconnected;
+            _transport.OnClientError += OnClientError;
 
             RegisterHandler((byte)Packets.Handshake, ClientHandshakeReceived, 0);
             RegisterHandler((byte)Packets.SuccessfulHandshake, ClientSuccessfulHandshakeReceived, 0);
@@ -113,7 +108,7 @@ namespace NetSync.Client
         public void NetworkSend(byte packetId, Packet packet, byte channel = 1)
         {
             PacketHeader packetHeader = new PacketHeader(channel, packetId);
-            Transport.ClientSendData(packet, packetHeader);
+            _transport.ClientSendData(packet, packetHeader);
             packet.Dispose();
         }
 
@@ -121,7 +116,7 @@ namespace NetSync.Client
 
         private void ClientConnected()
         {
-            IsActive = true;
+            _connected = true;
             OnClientConnected?.Invoke();
         }
 
@@ -142,7 +137,7 @@ namespace NetSync.Client
 
         private void ClientDisconnected()
         {
-            IsActive = false;
+            _connected = false;
             OnClientDisconnected?.Invoke();
         }
 
@@ -157,10 +152,37 @@ namespace NetSync.Client
 
         #endregion Client Events
 
+        /// <summary>
+        /// Checks if the client is connected to the server.
+        /// </summary>
+        /// <returns>Returns true if connection is active.</returns>
+        public bool IsActive()
+        {
+            return _connected;
+        }
+
+        /// <summary>
+        /// Checks if the client has successfully completed the handshake process with server.
+        /// </summary>
+        /// <returns>Boolean</returns>
+        public bool IsHandshakeSuccessful()
+        {
+            return _handshakeCompleted;
+        }
+
+        /// <summary>
+        /// Gets this client's connection id.
+        /// </summary>
+        /// <returns>Connection Id</returns>
+        public ushort GetConnectionId()
+        {
+            return _connectionId;
+        }
+
         private void ClientHandshakeReceived(Packet packet)
         {
             ushort connectionId = packet.ReadUnsignedShort();
-            ConnectionId = connectionId;
+            _connectionId = connectionId;
 
             Packet handshakePacket = new Packet();
             handshakePacket.WriteUnsignedShort(connectionId);
@@ -170,7 +192,7 @@ namespace NetSync.Client
 
         private void ClientSuccessfulHandshakeReceived(Packet packet)
         {
-            HandshakeCompleted = true;
+            _handshakeCompleted = true;
             ushort connectionId = packet.ReadUnsignedShort();
             OnHandshakeDone(connectionId);
         }

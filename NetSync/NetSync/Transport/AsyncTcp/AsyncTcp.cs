@@ -94,11 +94,10 @@ namespace NetSync.Transport.AsyncTcp
 
         public override void ClientDisconnect()
         {
-            _tcpClient.Client?.Disconnect(true);
             _tcpClient?.Close();
-            _tcpClient = null;
-            _netStream = null;
             _receiveBuffer = null;
+            _netStream = null;
+            _tcpClient = null;
             OnClientDisconnect();
         }
 

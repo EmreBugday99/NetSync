@@ -12,19 +12,17 @@ namespace NetSync.Server
         private readonly ushort _maxConnections;
         internal readonly int ServerPort;
         internal readonly int DataBufferSize;
-        internal TransportBase Transport;
-        public bool IsActive;
-        public Connection[] Connections;
+        internal readonly TransportBase Transport;
+        private bool _isActive;
+        internal Connection[] Connections;
 
         public delegate void MessageHandle(Connection connection, Packet packet);
-
         private Dictionary<PacketHeader, ServerHandle> ReceiveHandlers = new Dictionary<PacketHeader, ServerHandle>();
 
         /// <summary>
         /// Server side handler queue for single threaded applications.
         /// </summary>
         private List<ServerQueueHandle> _serverHandleQueue = new List<ServerQueueHandle>();
-
         /// <summary>
         /// The lock object that should be used for reading/modifying Server Handle Queue
         /// </summary>
@@ -33,7 +31,7 @@ namespace NetSync.Server
         /// <summary>
         /// Network synced objects
         /// </summary>
-        internal List<object> NetworkedObjects = new List<object>();
+        private List<object> _networkedObjects = new List<object>();
 
         #region Events
 
@@ -79,7 +77,7 @@ namespace NetSync.Server
 
         public NetworkServer(int serverPort, ushort maxConnections, int dataBufferSize, TransportBase transport)
         {
-            IsActive = false;
+            _isActive = false;
             ServerPort = serverPort;
             _maxConnections = maxConnections;
             DataBufferSize = dataBufferSize;
@@ -105,7 +103,7 @@ namespace NetSync.Server
         /// Starts the server and begins listening for new connections.
         /// </summary>
         /// <param name="threadPriority"></param>
-        public void Start(ThreadPriority threadPriority = ThreadPriority.Normal)
+        public void StartServer()
         {
             Transport.OnServerStarted += ServerStarted;
             Transport.OnServerConnected += ServerConnected;
@@ -114,13 +112,15 @@ namespace NetSync.Server
             Transport.OnServerStopped += ServerStopped;
             Transport.OnServerError += OnServerError;
 
-            ServerThread = new Thread(StartServer) { Priority = threadPriority };
-            ServerThread.Start();
+            Transport.ServerStart(this);
         }
 
-        private void StartServer()
+        /// <summary>
+        /// Stops the server.
+        /// </summary>
+        public void StopServer()
         {
-            Transport.ServerStart(this);
+            Transport.ServerStop();
         }
 
         /// <summary>
@@ -199,7 +199,7 @@ namespace NetSync.Server
         /// <param name="server">The NetworkServer that started.</param>
         private void ServerStarted(NetworkServer server)
         {
-            IsActive = true;
+            _isActive = true;
             OnServerStarted?.Invoke(server);
         }
 
@@ -265,7 +265,7 @@ namespace NetSync.Server
         /// <param name="server"></param>
         private void ServerStopped(NetworkServer server)
         {
-            IsActive = false;
+            _isActive = false;
             OnServerStopped?.Invoke(server);
         }
 
@@ -282,6 +282,15 @@ namespace NetSync.Server
         #endregion Server Events
 
         /// <summary>
+        /// Checks if the server is up and running / listening for new connections.
+        /// </summary>
+        /// <returns>Returns true if server is running.</returns>
+        public bool IsServerActive()
+        {
+            return _isActive;
+        }
+
+        /// <summary>
         /// Executes all the queued handlers. Useful for single threaded applications.
         /// </summary>
         public void ExecuteHandleQueue()
@@ -296,6 +305,11 @@ namespace NetSync.Server
             }
         }
 
+        /// <summary>
+        /// Executed after server receives handshake packet from client
+        /// </summary>
+        /// <param name="connection">Client that send the packet</param>
+        /// <param name="packet">Handshake packet</param>
         private void ServerHandshakeReceived(Connection connection, Packet packet)
         {
             ushort connectionId = packet.ReadUnsignedShort();
@@ -331,8 +345,8 @@ namespace NetSync.Server
             NetworkSendEveryone((byte)Packets.SyncNetworkObject, packet, 0);
 
             //Adding the object to the NetworkObjects list for late comer synchronization
-            if (lateJoinerSynced && !NetworkedObjects.Contains(objectToCreate))
-                NetworkedObjects.Add(objectToCreate);
+            if (lateJoinerSynced && !_networkedObjects.Contains(objectToCreate))
+                _networkedObjects.Add(objectToCreate);
         }
 
         /// <summary>
@@ -349,8 +363,8 @@ namespace NetSync.Server
             NetworkSend(connection, (byte)Packets.SyncNetworkObject, packet, 0);
 
             //Adding the object to the NetworkObjects list for late comer synchronization
-            if (lateJoinerSynced && !NetworkedObjects.Contains(objectToCreate))
-                NetworkedObjects.Add(objectToCreate);
+            if (lateJoinerSynced && !_networkedObjects.Contains(objectToCreate))
+                _networkedObjects.Add(objectToCreate);
         }
 
         /// <summary>
@@ -360,9 +374,9 @@ namespace NetSync.Server
         private void LateComerNetworkObjectSync(Connection connection)
         {
             //If there is any NetworkObjects in the list create them as well for the new client(late joiner).
-            if (NetworkedObjects.Count > 0)
+            if (_networkedObjects.Count > 0)
             {
-                foreach (var networkedObject in NetworkedObjects)
+                foreach (var networkedObject in _networkedObjects)
                 {
                     CreateNetworkObject(connection, networkedObject);
                 }
@@ -375,10 +389,10 @@ namespace NetSync.Server
         /// <param name="objectToRemove">Object/Class to remove.</param>
         public void RemoveNetworkObject(object objectToRemove)
         {
-            if (NetworkedObjects.Contains(objectToRemove))
+            if (_networkedObjects.Contains(objectToRemove))
             {
                 Console.WriteLine("Removed");
-                NetworkedObjects.Remove(objectToRemove);
+                _networkedObjects.Remove(objectToRemove);
                 return;
             }
 
