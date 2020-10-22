@@ -38,7 +38,7 @@ If your application has a complex multi-threaded architecture or if you simply n
 <br>
 Any handler that is marked as queued will not execute right away when they get received. They will be stored in memory and wait for execution. When you call ExecuteQueuedHandlers method it will execute the entire queue from the thread you specifically called the method. This ensures thread safety amongst your application.
 <br>
-You can get more information from [this link](hhttps://github.com/EmreBugday99/NetSync/issues/14)
+You can get more information from [this link](https://github.com/EmreBugday99/NetSync/issues/14)
 <br>
 
 ## Network Synced Objects
