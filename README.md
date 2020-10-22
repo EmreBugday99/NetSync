@@ -47,6 +47,8 @@ You can create synced classes during runtime. Synced classes will get constructe
 You can also mark your classes/objects as late comer synced. This will ensure them to be also instantiated on clients that connected after the networked class got created.
 <br>
 For safety reasons this feature can only be executed from server.
+<br>
+You can get more information from [this link](https://github.com/EmreBugday99/NetSync/pull/7)
 
 ## Multi Channel Support
 NetSync supports multi channel system integration. Channels are a great way to categorize your packets according to your needs. 
