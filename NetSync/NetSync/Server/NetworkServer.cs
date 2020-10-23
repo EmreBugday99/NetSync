@@ -230,7 +230,7 @@ namespace NetSync.Server
         private void ServerDataReceived(Connection connection, Packet packet, PacketHeader packetHeader)
         {
             //If the client did not complete the initial handshake and the packet they send is not a handshake packet refuse connection.
-            if (connection.HandshakeCompleted == false && packetHeader.Channel != 0 || packetHeader.PacketId != (byte)Packets.Handshake)
+            if (connection.HandshakeCompleted == false && packetHeader.Channel != 0 && packetHeader.PacketId != (byte)Packets.Handshake)
             {
                 connection.Disconnect();
                 return;
