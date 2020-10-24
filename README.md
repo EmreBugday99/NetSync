@@ -28,7 +28,7 @@ NetSync focuses on scalability. You can't scale well if you run thousands of con
 <br>
 You still can create your own transports and make it synchronous. 
 <br>
-I created this library for my specific needs and one of scalability comes first amongst those needs. 
+I created this library for my specific needs and scalability comes first amongst those needs. 
 <br>Due to the dynamic nature of the library you can customize it however you want. 
 <br>
 Transports simply functions like plugins. You plug your own transport and viola, you are ready to go.
