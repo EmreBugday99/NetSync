@@ -33,7 +33,14 @@ namespace NetSync
         /// <returns>Packet buffer</returns>
         public byte[] GetByteArray()
         {
-            return _buffer.ToArray();
+            if (_buffer != null) return _buffer.ToArray();
+
+            return _readBuffer;
+        }
+
+        public ushort GetRemainingBytes()
+        {
+            return (ushort)(_readBuffer.Length - _readPosition);
         }
 
         #region Write Methods
