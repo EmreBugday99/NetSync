@@ -18,6 +18,18 @@ namespace NetSync.Transport.AsyncTcp
         private NetworkServer _networkServer;
         private NetworkClient _networkClient;
 
+        private bool _useNagle;
+
+        /// <summary>
+        /// Nagle's algorithm combines small packets into one packet and sends them all at once.
+        /// This reduces bandwidth but increases latency and CPU usage.
+        /// </summary>
+        /// <param name="useNagle">Should AsyncTcp use Nagle's algorithm</param>
+        public AsyncTcp(bool useNagle = true)
+        {
+            _useNagle = useNagle;
+        }
+
         #region Client
 
         public override void ClientConnect(NetworkClient client)
@@ -29,6 +41,7 @@ namespace NetSync.Transport.AsyncTcp
                 ReceiveBufferSize = _bufferSize,
                 SendBufferSize = _bufferSize
             };
+            _tcpClient.NoDelay = _useNagle;
             _tcpClient.BeginConnect(client.ServerIp, client.ServerPort, ClientConnectCallback, null);
 
             _networkClient = client;
@@ -151,6 +164,8 @@ namespace NetSync.Transport.AsyncTcp
         private void ServerConnectionCallback(IAsyncResult result)
         {
             TcpClient tcpClient = _tcpListener.EndAcceptTcpClient(result);
+            tcpClient.NoDelay = _useNagle;
+
             _tcpListener.BeginAcceptTcpClient(ServerConnectionCallback, null);
 
             foreach (var connection in _networkServer.Connections)
