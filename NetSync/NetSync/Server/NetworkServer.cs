@@ -10,7 +10,7 @@ namespace NetSync.Server
         public Thread ServerThread;
 
         private readonly ushort _maxConnections;
-        internal readonly int ServerPort;
+        internal int ServerPort;
         internal readonly int DataBufferSize;
         internal readonly TransportBase Transport;
         private bool _isActive;

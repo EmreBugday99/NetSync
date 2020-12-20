@@ -158,6 +158,13 @@ namespace NetSync.Transport.AsyncTcp
 
             _tcpListener.Start();
             _tcpListener.BeginAcceptTcpClient(ServerConnectionCallback, null);
+
+            // Assigning the port to NetworkServer in case specified port is 0
+            // Port 0 means => Pick the next available port
+            IPEndPoint endPoint = (IPEndPoint)_tcpListener.Server.LocalEndPoint;
+            int port = endPoint.Port;
+            _networkServer.ServerPort = port;
+
             OnServerStart(_networkServer);
         }
 
