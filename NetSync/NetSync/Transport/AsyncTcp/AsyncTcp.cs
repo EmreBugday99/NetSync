@@ -170,19 +170,26 @@ namespace NetSync.Transport.AsyncTcp
 
         private void ServerConnectionCallback(IAsyncResult result)
         {
-            TcpClient tcpClient = _tcpListener.EndAcceptTcpClient(result);
-            tcpClient.NoDelay = _useNagle;
-
-            _tcpListener.BeginAcceptTcpClient(ServerConnectionCallback, null);
-
-            foreach (var connection in _networkServer.Connections)
+            try
             {
-                if (connection.IsConnected) continue;
+                TcpClient tcpClient = _tcpListener.EndAcceptTcpClient(result);
+                tcpClient.NoDelay = _useNagle;
 
-                _serverConnections[connection.ConnectionId] = new ServerConnection(tcpClient, _bufferSize, this, connection);
-                connection.UAI = tcpClient.Client.RemoteEndPoint.ToString();
-                OnServerConnect(connection);
-                break;
+                _tcpListener.BeginAcceptTcpClient(ServerConnectionCallback, null);
+
+                foreach (var connection in _networkServer.Connections)
+                {
+                    if (connection.IsConnected) continue;
+
+                    _serverConnections[connection.ConnectionId] = new ServerConnection(tcpClient, _bufferSize, this, connection);
+                    connection.UAI = tcpClient.Client.RemoteEndPoint.ToString();
+                    OnServerConnect(connection);
+                    break;
+                }
+            }
+            catch (Exception exception)
+            {
+                OnServerErrorDetected("Error while accepting connection: " + exception);
             }
         }
 

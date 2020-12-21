@@ -1,7 +1,6 @@
 ﻿using NetSync.Transport;
 using System;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace NetSync.Client
 {
@@ -20,6 +19,7 @@ namespace NetSync.Client
         private Dictionary<PacketHeader, ClientHandle> ReceiveHandlers = new Dictionary<PacketHeader, ClientHandle>();
 
         private List<ClientQueueHandle> _clientQueueHandlers = new List<ClientQueueHandle>();
+        //To prevent executing the Queue while adding to it at the same time.
         internal object QueueLock = new object();
 
         #region Events
@@ -122,6 +122,8 @@ namespace NetSync.Client
 
         private void ClientDataReceived(Packet packet, PacketHeader packetHeader)
         {
+            if (ReceiveHandlers.ContainsKey(packetHeader) == false) return;
+
             if (ReceiveHandlers[packetHeader].IsQueued)
             {
                 ClientQueueHandle queueHandle = new ClientQueueHandle(packet, ReceiveHandlers[packetHeader]);
