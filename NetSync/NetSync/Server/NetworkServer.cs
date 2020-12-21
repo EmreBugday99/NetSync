@@ -17,12 +17,14 @@ namespace NetSync.Server
         internal Connection[] Connections;
 
         public delegate void MessageHandle(Connection connection, Packet packet);
+
         private Dictionary<PacketHeader, ServerHandle> ReceiveHandlers = new Dictionary<PacketHeader, ServerHandle>();
 
         /// <summary>
         /// Server side handler queue for single threaded applications.
         /// </summary>
         private List<ServerQueueHandle> _serverHandleQueue = new List<ServerQueueHandle>();
+
         /// <summary>
         /// The lock object that should be used for reading/modifying Server Handle Queue
         /// </summary>
@@ -235,6 +237,8 @@ namespace NetSync.Server
                 connection.Disconnect();
                 return;
             }
+
+            if (ReceiveHandlers.ContainsKey(packetHeader) == false) return;
 
             if (ReceiveHandlers[packetHeader].IsQueued)
             {

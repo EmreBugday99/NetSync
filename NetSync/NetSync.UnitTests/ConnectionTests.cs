@@ -90,5 +90,30 @@ namespace NetSync.UnitTests
 
             Assert.IsTrue(!client1.IsActive() && server.IsServerActive());
         }
+
+        [TestMethod]
+        public void CanStartServer_StartedWithoutError()
+        {
+            AsyncTcp transport = new AsyncTcp();
+            NetworkServer server = new NetworkServer(0, 2, 4095, transport);
+            server.StartServer();
+
+            Thread.Sleep(1000);
+            Assert.IsTrue(server.IsServerActive());
+        }
+
+        [TestMethod]
+        public void CanStopServer_ServerStoppedWithoutError()
+        {
+            AsyncTcp transport = new AsyncTcp();
+            NetworkServer server = new NetworkServer(0, 2, 4095, transport);
+            server.StartServer();
+
+            Thread.Sleep(1000);
+            server.StopServer();
+            Thread.Sleep(1000);
+
+            Assert.IsFalse(server.IsServerActive());
+        }
     }
 }
