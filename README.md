@@ -59,19 +59,3 @@ By default you use the channel 1 for transmission. You can easily change that wi
 <br>
 ### WARNING: YOU SHOULD NEVER USE CHANNEL 0 AS IT IS RESERVED FOR NETSYNC!
 <br>
-
-
-### Most Importantly:
-# Performance Over Safety
-Unlike my previous library(InteractiveSync) NetSync will not hold your hand. If you do something which may crash the application, it will crash!
-<br>
-It will not have dozens of safety checks to sugar daddy you just in case you/me/someone fucks up something in their application logic.
-<br>
-That kind of 'safety first' approach just slows the hell of the system. I created this library because I needed speed & scalability.
-<br>
-One of the golden rules of programming: Safety and performance are inversely proportional. If you want one you must sacrifice the other.
-<br>
-If you want a library which is going to handle all sort of errors for you; NetSync is not the good choice. This is not my focus and that is not where I am taking this library towards.
-<br>
-<br>
-This doesn't mean that we don't have safety checks at all. We do. I have a golden rule for this. If a method is going to be executed quite a lot during the liftetime of the application than it should have as little safety controls as possible. If a method is going to be executed rarely / not quite often than there is litterally no point at not implementing safety features there. I am not a lunatic who hates from safe implementations. I like them and I use them quite often but some libraries has different use-cases/focuses than others. NetSync is one of them.
