@@ -57,5 +57,5 @@ Maybe you want to use channel specifically for encrypted transmission? You can e
 <br>
 By default you use the channel 1 for transmission. You can easily change that with specifying a new channel when sending a packet / registering a handler.
 <br>
-### WARNING: YOU SHOULD NEVER USE CHANNEL 0 AS IT IS RESERVED FOR NETSYNC!
+### WARNING: YOU SHOULD NEVER USE CHANNEL 0 AS IT IS RESERVED FOR NETSYNC'S INTERNAL PROTOCOL!
 <br>
