@@ -1,10 +1,22 @@
-﻿namespace NetSync2.Client
+﻿namespace NetSync2
 {
-    internal struct RemoteHandle
+    public struct RemoteHandle
     {
-        internal Network.RpcHandle RpcHandle;
-        internal int RpcHash;
+        public Network.RpcHandle RpcHandle;
+        public int RpcHash;
 
-        internal NetType NetworkType;
+        public TargetType Target;
+        public RpcType RpcType;
+
+        public static int GetStableHashCode(string text)
+        {
+            unchecked
+            {
+                int hash = 23;
+                foreach (char c in text)
+                    hash = hash * 31 + c;
+                return hash;
+            }
+        }
     }
 }

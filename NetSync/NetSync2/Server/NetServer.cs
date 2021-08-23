@@ -2,7 +2,7 @@
 {
     public class NetServer
     {
-        internal readonly Network NetManager;
+        public readonly Network NetManager;
 
         public readonly ushort ConnectionLimit;
         internal NetConnection[] Connections;

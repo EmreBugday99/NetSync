@@ -1,27 +1,27 @@
 ﻿using NetSync2;
-using System;
 using NetSync2.Transport.NetUdp;
+using System;
 
-namespace TestApplication
+namespace TestClient
 {
     public class TestNetwork
     {
         public Network Net;
+
         public void DoSomething()
         {
             NetUdpManager udpTransport = new NetUdpManager(2045, 2046);
             Net = new Network(udpTransport, 2048);
 
             Net.RegisterRpc(TestRpc);
-            Net.CreateServer(5);
+            Net.CreateClient("127.0.0.1", 2045);
+            Net.InvokeRpc(TestRpc);
         }
 
-        [RPC(TargetType.NetServer, RpcType.Receive)]
+        [RPC(TargetType.NetServer, RpcType.Send)]
         private void TestRpc(ref Packet packet)
         {
-            string msg = packet.ReadString();
-
-            Console.WriteLine(msg);
+            packet.WriteString("What's UP mother fucker?");
         }
     }
 }

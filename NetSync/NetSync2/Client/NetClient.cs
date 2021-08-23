@@ -10,6 +10,7 @@ namespace NetSync2.Client
 
         public NetClient(string ip, int port, Network netManager)
         {
+            NetManager = netManager;
             ServerEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
         }
     }

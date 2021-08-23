@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 
 namespace NetSync2
 {
     public class Packet
     {
-        public readonly NetConnection connection;
+        public NetConnection TargetConnection;
 
         private List<byte> _buffer;
         private byte[] _readBuffer;
@@ -109,7 +110,7 @@ namespace NetSync2
         /// Inserts unsigned short into specified index of the buffer.
         /// </summary>
         /// <param name="index">Which index to insert in the buffer</param>
-        /// <param name="data">The usnigned short data to insert</param>
+        /// <param name="data">The unsigned short data to insert</param>
         public void InsertUnsignedShort(int index, ushort data)
             => _buffer.InsertRange(index, BitConverter.GetBytes(data));
 
@@ -119,6 +120,14 @@ namespace NetSync2
         /// <param name="data">32bit integer to write.</param>
         public void WriteInteger(int data)
             => _buffer.AddRange(BitConverter.GetBytes(data));
+
+        /// <summary>
+        /// Inserts integer into specified index of the buffer.
+        /// </summary>
+        /// <param name="index">Which index to insert in the buffer</param>
+        /// <param name="data">The int data to insert</param>
+        public void InsertInteger(int index, int data)
+            => _buffer.InsertRange(index, BitConverter.GetBytes(data));
 
         /// <summary>
         /// Writes 32bit unsigned integer into the packet buffer.

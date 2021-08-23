@@ -7,6 +7,11 @@ namespace NetSync2
         public readonly Network NetManager;
 
         public readonly ushort ConnectionId;
+        /// <summary>
+        /// Network Unique Identifier
+        /// Ex: Steam Name / Epic Name / User Name
+        /// </summary>
+        public string NUID;
         public IPEndPoint EndPoint;
         private bool _isConnected;
 
@@ -14,7 +19,7 @@ namespace NetSync2
         {
             NetManager = netManager;
 
-            EndPoint = null;
+            NUID = null;
             _isConnected = false;
             ConnectionId = id;
         }
@@ -33,7 +38,7 @@ namespace NetSync2
         public void Disconnect()
         {
             _isConnected = false;
-            EndPoint = null;
+            NUID = null;
         }
     }
 }
