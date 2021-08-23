@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NetSync
+namespace NetSync2
 {
-    public class Packet : IDisposable
+    public class Packet
     {
+        public readonly NetConnection connection;
+
         private List<byte> _buffer;
         private byte[] _readBuffer;
         private int _readPosition;
@@ -389,28 +391,5 @@ namespace NetSync
         }
 
         #endregion Read Methods
-
-        private bool _isDisposed = false;
-
-        protected virtual void Dispose(bool isDisposing)
-        {
-            if (_isDisposed == false)
-            {
-                if (isDisposing)
-                    _buffer.Clear();
-
-                _readPosition = 0;
-                _readBuffer = null;
-                _buffer = null;
-            }
-
-            _isDisposed = true;
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
     }
 }
