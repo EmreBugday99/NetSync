@@ -1,27 +1,24 @@
 ﻿using NetSync2;
-using System;
 using NetSync2.Transport.NetUdp;
+using System;
 
-namespace TestApplication
+namespace TestServer
 {
     public class TestNetwork
     {
         public Network Net;
+
         public void DoSomething()
         {
-            NetUdpManager udpTransport = new NetUdpManager(2045, 2046);
+            NetUdpManager udpTransport = new NetUdpManager("127.0.0.1", 2445, 2446);
             Net = new Network(udpTransport, 2048);
 
-            Net.RegisterRpc(TestRpc);
             Net.CreateServer(5);
-        }
 
-        [RPC(TargetType.NetServer, RpcType.Receive)]
-        private void TestRpc(ref Packet packet)
-        {
-            string msg = packet.ReadString();
-
-            Console.WriteLine(msg);
+            while (true)
+            {
+                udpTransport.ExecuteRpcBuffer();
+            }
         }
     }
 }

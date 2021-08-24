@@ -1,4 +1,4 @@
-﻿namespace TestApplication
+﻿namespace TestServer
 {
     internal class Program
     {

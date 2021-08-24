@@ -6,30 +6,26 @@ namespace NetSync2
     {
         public readonly Network NetManager;
 
-        public readonly ushort ConnectionId;
+        public ushort ConnectionId;
+
         /// <summary>
         /// Network Unique Identifier
-        /// Ex: Steam Name / Epic Name / User Name
+        /// Ex: User Name / Steam Name / Epic Name etc.
         /// </summary>
         public string NUID;
         public IPEndPoint EndPoint;
-        private bool _isConnected;
+        /// <summary>
+        /// Is this NetConnection currently connected to any network?
+        /// </summary>
+        public bool IsConnected;
 
         public NetConnection(ushort id, Network netManager)
         {
             NetManager = netManager;
 
             NUID = null;
-            _isConnected = false;
+            IsConnected = false;
             ConnectionId = id;
-        }
-
-        /// <summary>
-        /// Is this NetConnection currently connected to any network?
-        /// </summary>
-        public bool IsConnected()
-        {
-            return _isConnected;
         }
 
         /// <summary>
@@ -37,7 +33,7 @@ namespace NetSync2
         /// </summary>
         public void Disconnect()
         {
-            _isConnected = false;
+            IsConnected = false;
             NUID = null;
         }
     }

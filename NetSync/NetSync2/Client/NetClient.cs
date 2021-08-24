@@ -1,17 +1,16 @@
-﻿using System.Net;
+﻿using System;
+using NetSync2.Server;
 
 namespace NetSync2.Client
 {
     public class NetClient
     {
         public readonly Network NetManager;
-        public readonly IPEndPoint ServerEndPoint;
-        public NetConnection Connection;
+        public NetConnection LocalConnection;
 
-        public NetClient(string ip, int port, Network netManager)
+        public NetClient(Network netManager)
         {
             NetManager = netManager;
-            ServerEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
         }
     }
 }

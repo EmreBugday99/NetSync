@@ -5,7 +5,7 @@ namespace NetSync2.Transport
 {
     public abstract class TransportBase
     {
-        public abstract void ConnectClient(NetClient client);
+        public abstract void StartClient(NetClient client);
         public abstract void DisconnectClient(NetClient client);
 
         public abstract void StartServer(NetServer server);

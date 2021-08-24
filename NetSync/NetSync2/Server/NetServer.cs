@@ -1,11 +1,14 @@
-﻿namespace NetSync2.Server
+﻿using System.Collections.Generic;
+
+namespace NetSync2.Server
 {
     public class NetServer
     {
         public readonly Network NetManager;
 
         public readonly ushort ConnectionLimit;
-        internal NetConnection[] Connections;
+        internal readonly NetConnection[] Connections;
+        public Dictionary<string, NetConnection> ActiveConnections;
 
         public NetServer(ushort connectionLimit, Network netManager)
         {

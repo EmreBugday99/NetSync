@@ -1,5 +1,8 @@
 ﻿using NetSync2.Client;
 using NetSync2.Server;
+using System;
+using System.Collections.Generic;
+using System.Net;
 
 namespace NetSync2.Transport.NetUdp
 {
@@ -10,35 +13,43 @@ namespace NetSync2.Transport.NetUdp
         internal int ServerPort;
 
         internal NetUdpListener Listener;
+        internal IPEndPoint ServerEndPoint;
         internal NetUdpSender Sender;
 
         internal Network NetManager;
         internal NetServer Server;
         internal NetClient Client;
 
-        public NetUdpManager(int serverPort, int clientPort)
+        internal List<Tuple<RemoteHandle, Packet>> RpcBuffer;
+        internal object RpcBufferLock;
+
+        public NetUdpManager(string serverIp, int serverPort, int clientPort)
         {
-            ClientPort = clientPort;
-            ServerPort = serverPort;
+            RpcBuffer = new List<Tuple<RemoteHandle, Packet>>();
+            RpcBufferLock = new object();
 
             Listener = null;
             Sender = null;
             Server = null;
             Client = null;
+
+            ServerEndPoint = new IPEndPoint(IPAddress.Parse(serverIp), serverPort);
+            ClientPort = clientPort;
+            ServerPort = serverPort;
         }
 
-        public override void ConnectClient(NetClient client)
+        public override void StartClient(NetClient client)
         {
             NetManager = client.NetManager;
             Client = client;
             PacketSize = NetManager.PacketSize;
 
-            //if (Listener == null)
-            //  Listener = new NetUdpListener(this);
+            if (Listener == null)
+                Listener = new NetUdpListener(this);
             if (Sender == null)
                 Sender = new NetUdpSender(this);
 
-            //Listener.StartListening(ClientPort);
+            Listener.StartListening(ClientPort);
         }
 
         public override void DisconnectClient(NetClient client)
@@ -70,6 +81,23 @@ namespace NetSync2.Transport.NetUdp
         public override void SendRpc(RemoteHandle handle, ref Packet packet)
         {
             Sender.InvokeRpc(handle, ref packet);
+        }
+
+        public void ExecuteRpcBuffer()
+        {
+            if (RpcBuffer.Count == 0)
+                return;
+
+            lock (RpcBufferLock)
+            {
+                for (int i = RpcBuffer.Count - 1; i >= 0; i--)
+                {
+                    Packet packet = RpcBuffer[i].Item2;
+                    RpcBuffer[i].Item1.RpcHandle.Invoke(ref packet);
+                }
+
+                RpcBuffer.Clear();
+            }
         }
     }
 }

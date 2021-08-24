@@ -7,7 +7,8 @@ namespace NetSync2
 {
     public class Packet
     {
-        public NetConnection TargetConnection;
+        public NetConnection Connection;
+        public IPEndPoint EndPoint;
 
         private List<byte> _buffer;
         private byte[] _readBuffer;
@@ -25,9 +26,11 @@ namespace NetSync2
         /// Should be used for deserializing received packets.
         /// </summary>
         /// <param name="receivedData">Received data</param>
-        public Packet(byte[] receivedData)
+        /// <param name="dataSize">Total size of the data that needs to be allocated</param>
+        public Packet(ref byte[] receivedData, int dataSize)
         {
-            _readBuffer = receivedData;
+            _readBuffer = new byte[dataSize];
+            Array.Copy(receivedData, _readBuffer, dataSize);
         }
 
         /// <summary>
