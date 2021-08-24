@@ -1,4 +1,5 @@
 ﻿using NetSync2.Client;
+using NetSync2.Runtime;
 using NetSync2.Server;
 using NetSync2.Transport;
 using System;
@@ -17,7 +18,9 @@ namespace NetSync2
         internal TransportBase Transport;
 
         public delegate void RpcHandle(ref Packet packet);
-        private Dictionary<int, RemoteHandle> _rpcDictionary;
+
+        public Dictionary<int, NetSync2.RpcHandle> RpcDictionary;
+        public Dictionary<int, NetClass> NetworkedClasses;
 
         public delegate void NetworkError(string errorMsg);
 
@@ -29,7 +32,7 @@ namespace NetSync2
             PacketSize = packetSize;
             NetworkServer = null;
             NetworkClient = null;
-            _rpcDictionary = new Dictionary<int, RemoteHandle>();
+            RpcDictionary = new Dictionary<int, NetSync2.RpcHandle>();
         }
 
         public NetServer CreateServer(ushort connectionLimit)
@@ -48,7 +51,7 @@ namespace NetSync2
         {
             NetworkClient = new NetClient(this);
             Transport.StartClient(NetworkClient);
-            InvokeRpc("NetSync_ClientHandshakeWithServer");
+
             return NetworkClient;
         }
 
@@ -69,67 +72,40 @@ namespace NetSync2
 
             int rpcHash = rpcHandle.Method.Name.GetStableHashCode();
 
-            if (_rpcDictionary.ContainsKey(rpcHash))
+            if (RpcDictionary.ContainsKey(rpcHash))
             {
                 Console.WriteLine("RPC Already registered!");
                 return;
             }
 
-            RemoteHandle handle = new RemoteHandle
+            NetSync2.RpcHandle handle = new NetSync2.RpcHandle
             {
-                RpcHandle = rpcHandle,
+                Handle = rpcHandle,
                 RpcHash = rpcHash,
-                Target = rpc.Network,
-                Type = rpc.Type
+                Target = rpc.RpcTarget,
             };
 
-            _rpcDictionary.Add(handle.RpcHash, handle);
+            RpcDictionary.Add(handle.RpcHash, handle);
         }
 
         public void RemoveRpc(RpcHandle rpcHandle)
         {
-            _rpcDictionary.Remove(rpcHandle.Method.Name.GetHashCode());
+            RpcDictionary.Remove(rpcHandle.Method.Name.GetHashCode());
         }
 
-        public RemoteHandle GetHandleWithHash(int hash)
+        public NetSync2.RpcHandle GetHandleWithHash(int hash)
         {
-            return _rpcDictionary[hash];
-        }
-
-        public void InvokeRpc(RpcHandle rpcHandle, NetConnection target = null)
-        {
-            Packet packet = new Packet();
-            packet.Connection = target;
-            rpcHandle.Invoke(ref packet);
-
-            string rpcName = rpcHandle.Method.Name;
-            RemoteHandle handle = _rpcDictionary[rpcName.GetStableHashCode()];
-
-            packet.InsertInteger(0, handle.RpcHash);
-            Transport.SendRpc(handle, ref packet);
-        }
-
-        public void InvokeRpc(string rpcName, NetConnection target = null)
-        {
-            Packet packet = new Packet();
-            packet.Connection = target;
-
-            RemoteHandle handle = GetHandleWithHash(rpcName.GetStableHashCode());
-
-            handle.RpcHandle.Invoke(ref packet);
-
-            packet.InsertInteger(0, handle.RpcHash);
-            Transport.SendRpc(handle, ref packet);
+            return RpcDictionary[hash];
         }
 
         public void NetOnReceive(ref Packet packet, Target rpc)
         {
             int rpcHash = packet.ReadInteger();
 
-            RemoteHandle handle = _rpcDictionary[rpcHash];
+            NetSync2.RpcHandle handle = RpcDictionary[rpcHash];
 
             if (handle.Target == rpc)
-                handle.RpcHandle.Invoke(ref packet);
+                handle.Handle.Invoke(ref packet);
         }
 
         public virtual void InvokeNetworkError(string errorMsg)

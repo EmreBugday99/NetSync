@@ -5,13 +5,11 @@ namespace NetSync2
     [AttributeUsage(AttributeTargets.Method)]
     public class RPC : Attribute
     {
-        public Target Network;
-        public RpcType Type;
+        public Target RpcTarget;
 
-        public RPC(Target target, RpcType type)
+        public RPC(Target target)
         {
-            Network = target;
-            Type = type;
+            RpcTarget = target;
         }
     }
 }

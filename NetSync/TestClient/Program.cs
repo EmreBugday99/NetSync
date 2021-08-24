@@ -1,10 +1,8 @@
-﻿using System;
-
-namespace TestClient
+﻿namespace TestClient
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             TestNetwork test = new TestNetwork();
             test.DoSomething();

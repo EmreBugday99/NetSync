@@ -21,5 +21,31 @@ namespace NetSync2.Server
                 Connections[i] = new NetConnection(i, netManager);
             }
         }
+
+        public void InvokeRpc(Network.RpcHandle rpcHandle, NetConnection target)
+        {
+            Packet packet = new Packet();
+            packet.Connection = target;
+            rpcHandle.Invoke(ref packet);
+
+            string rpcName = rpcHandle.Method.Name;
+            RpcHandle handle = NetManager.RpcDictionary[rpcName.GetStableHashCode()];
+
+            packet.InsertInteger(0, handle.RpcHash);
+            NetManager.Transport.SendRpc(handle, ref packet);
+        }
+
+        public void InvokeRpc(string rpcName, NetConnection target)
+        {
+            Packet packet = new Packet();
+            packet.Connection = target;
+
+            RpcHandle handle = NetManager.GetHandleWithHash(rpcName.GetStableHashCode());
+
+            handle.Handle.Invoke(ref packet);
+
+            packet.InsertInteger(0, handle.RpcHash);
+            NetManager.Transport.SendRpc(handle, ref packet);
+        }
     }
 }

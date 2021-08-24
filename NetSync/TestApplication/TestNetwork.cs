@@ -1,6 +1,5 @@
 ﻿using NetSync2;
 using NetSync2.Transport.NetUdp;
-using System;
 
 namespace TestServer
 {

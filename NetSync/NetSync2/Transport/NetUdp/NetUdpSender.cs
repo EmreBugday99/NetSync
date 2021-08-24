@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 
 namespace NetSync2.Transport.NetUdp
 {
@@ -19,7 +18,7 @@ namespace NetSync2.Transport.NetUdp
             //SenderSocket.Connect(_network.NetworkClient.ServerEndPoint);
         }
 
-        internal void InvokeRpc(RemoteHandle handle, ref Packet packet)
+        internal void InvokeRpc(RpcHandle handle, ref Packet packet)
         {
             // We don't want server sending to server (it self).
             if (handle.Target == Target.NetServer && _network.NetworkServer == null)

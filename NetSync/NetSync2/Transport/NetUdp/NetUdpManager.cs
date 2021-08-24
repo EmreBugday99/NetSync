@@ -20,12 +20,12 @@ namespace NetSync2.Transport.NetUdp
         internal NetServer Server;
         internal NetClient Client;
 
-        internal List<Tuple<RemoteHandle, Packet>> RpcBuffer;
+        internal List<Tuple<RpcHandle, Packet>> RpcBuffer;
         internal object RpcBufferLock;
 
         public NetUdpManager(string serverIp, int serverPort, int clientPort)
         {
-            RpcBuffer = new List<Tuple<RemoteHandle, Packet>>();
+            RpcBuffer = new List<Tuple<RpcHandle, Packet>>();
             RpcBufferLock = new object();
 
             Listener = null;
@@ -78,7 +78,7 @@ namespace NetSync2.Transport.NetUdp
         {
         }
 
-        public override void SendRpc(RemoteHandle handle, ref Packet packet)
+        public override void SendRpc(RpcHandle handle, ref Packet packet)
         {
             Sender.InvokeRpc(handle, ref packet);
         }
@@ -93,7 +93,7 @@ namespace NetSync2.Transport.NetUdp
                 for (int i = RpcBuffer.Count - 1; i >= 0; i--)
                 {
                     Packet packet = RpcBuffer[i].Item2;
-                    RpcBuffer[i].Item1.RpcHandle.Invoke(ref packet);
+                    RpcBuffer[i].Item1.Handle.Invoke(ref packet);
                 }
 
                 RpcBuffer.Clear();

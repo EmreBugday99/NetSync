@@ -74,24 +74,41 @@ namespace NetSync2.Transport.NetUdp
         private void AddToRpcBuffer(ref Packet packet, EndPoint senderEndPoint)
         {
             packet.EndPoint = (IPEndPoint)senderEndPoint;
-            Console.WriteLine(packet.EndPoint);
-            int rpcHash = packet.ReadInteger();
-            RemoteHandle handle = _network.GetHandleWithHash(rpcHash);
 
+            Console.WriteLine(packet.EndPoint);
+
+            int rpcHash = packet.ReadInteger();
+            RpcHandle handle = _network.GetHandleWithHash(rpcHash);
+
+            // If the received packet was sent for the server and if we are the server
             if (handle.Target == Target.NetServer && _network.NetworkServer != null)
             {
-                _network.InvokeNetworkError("Received an RPC targeted for Server but there is no Server!");
-                return;
+                foreach (NetConnection connection in _network.NetworkServer.Connections)
+                {
+                    if (connection.EndPoint.Equals(packet.EndPoint))
+                    {
+                        packet.Connection = connection;
+                        break;
+                    }
+                }
             }
-            if (handle.Target == Target.NetClient && _network.NetworkClient != null)
+
+            //Way 1
+            // If there isn't any client with the specified connection
+            if (packet.Connection == null && handle.RpcHash == "NetSync_AuthenticateRpc".GetStableHashCode())
             {
-                _network.InvokeNetworkError("Received an RPC targeted for Client but there is no Client!");
-                return;
+                //TODO: Authenticate
+            }
+
+            //Way 2
+            if (packet.Connection == null)
+            {
+                //TODO: Authenticate
             }
 
             lock (_netUdp.RpcBufferLock)
             {
-                _netUdp.RpcBuffer.Add(new Tuple<RemoteHandle, Packet>(handle, packet));
+                _netUdp.RpcBuffer.Add(new Tuple<RpcHandle, Packet>(handle, packet));
             }
         }
     }

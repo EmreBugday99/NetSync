@@ -13,7 +13,9 @@ namespace NetSync2
         /// Ex: User Name / Steam Name / Epic Name etc.
         /// </summary>
         public string NUID;
+
         public IPEndPoint EndPoint;
+
         /// <summary>
         /// Is this NetConnection currently connected to any network?
         /// </summary>
