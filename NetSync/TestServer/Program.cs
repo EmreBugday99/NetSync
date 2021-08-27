@@ -1,10 +1,10 @@
-﻿namespace TestClient
+﻿namespace TestServer
 {
-    internal class Program
+    public class Program
     {
         private static void Main(string[] args)
         {
-            TestNetwork test = new TestNetwork();
+            TestClass test = new TestClass();
             test.DoSomething();
         }
     }

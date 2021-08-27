@@ -1,8 +1,4 @@
-﻿using NetSync2.Client;
-using NetSync2.Server;
-using System;
-using System.Collections.Generic;
-using System.Net;
+﻿using System.Net;
 
 namespace NetSync2.Transport.NetUdp
 {
@@ -12,23 +8,21 @@ namespace NetSync2.Transport.NetUdp
         internal int ClientPort;
         internal int ServerPort;
 
-        internal NetUdpListener Listener;
-        internal IPEndPoint ServerEndPoint;
+        internal NetUdpListener ServerListener;
+        internal NetUdpListener ClientListener;
+
         internal NetUdpSender Sender;
+
+        internal IPEndPoint ServerEndPoint;
 
         internal Network NetManager;
         internal NetServer Server;
         internal NetClient Client;
 
-        internal List<Tuple<RpcHandle, Packet>> RpcBuffer;
-        internal object RpcBufferLock;
-
         public NetUdpManager(string serverIp, int serverPort, int clientPort)
         {
-            RpcBuffer = new List<Tuple<RpcHandle, Packet>>();
-            RpcBufferLock = new object();
-
-            Listener = null;
+            ClientListener = null;
+            ServerListener = null;
             Sender = null;
             Server = null;
             Client = null;
@@ -44,12 +38,12 @@ namespace NetSync2.Transport.NetUdp
             Client = client;
             PacketSize = NetManager.PacketSize;
 
-            if (Listener == null)
-                Listener = new NetUdpListener(this);
+            ClientListener = new NetUdpListener(this);
+            ClientListener.ServerListener = false;
             if (Sender == null)
                 Sender = new NetUdpSender(this);
 
-            Listener.StartListening(ClientPort);
+            ClientListener.StartListening(ClientPort);
         }
 
         public override void DisconnectClient(NetClient client)
@@ -62,12 +56,12 @@ namespace NetSync2.Transport.NetUdp
             Server = server;
             PacketSize = NetManager.PacketSize;
 
-            if (Listener == null)
-                Listener = new NetUdpListener(this);
+            ServerListener = new NetUdpListener(this);
+            ServerListener.ServerListener = true;
             if (Sender == null)
                 Sender = new NetUdpSender(this);
 
-            Listener.StartListening(ServerPort);
+            ServerListener.StartListening(ServerPort);
         }
 
         public override void ServerTerminateConnection(NetConnection connection)
@@ -78,26 +72,14 @@ namespace NetSync2.Transport.NetUdp
         {
         }
 
-        public override void SendRpc(RpcHandle handle, ref Packet packet)
+        public override void SendMessageToServer(ref Packet packet)
         {
-            Sender.InvokeRpc(handle, ref packet);
+            Sender.SendMessage(ref packet, ServerEndPoint);
         }
 
-        public void ExecuteRpcBuffer()
+        public override void SendMessageToClient(ref Packet packet, NetConnection connection)
         {
-            if (RpcBuffer.Count == 0)
-                return;
-
-            lock (RpcBufferLock)
-            {
-                for (int i = RpcBuffer.Count - 1; i >= 0; i--)
-                {
-                    Packet packet = RpcBuffer[i].Item2;
-                    RpcBuffer[i].Item1.Handle.Invoke(ref packet);
-                }
-
-                RpcBuffer.Clear();
-            }
+            Sender.SendMessage(ref packet, connection.EndPoint);
         }
     }
 }

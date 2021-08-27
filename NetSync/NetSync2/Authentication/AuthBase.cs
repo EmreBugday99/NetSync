@@ -1,6 +1,4 @@
-﻿using NetSync2.Client;
-
-namespace NetSync2.Authentication
+﻿namespace NetSync2.Authentication
 {
     public abstract class AuthBase
     {

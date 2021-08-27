@@ -11,6 +11,8 @@ namespace NetSync2.Transport.NetUdp
         internal Socket ListenerSocket;
         internal IPEndPoint LocalEndPoint;
 
+        public bool ServerListener;
+
         private NetUdpManager _netUdp;
         private Network _network;
 
@@ -73,43 +75,6 @@ namespace NetSync2.Transport.NetUdp
 
         private void AddToRpcBuffer(ref Packet packet, EndPoint senderEndPoint)
         {
-            packet.EndPoint = (IPEndPoint)senderEndPoint;
-
-            Console.WriteLine(packet.EndPoint);
-
-            int rpcHash = packet.ReadInteger();
-            RpcHandle handle = _network.GetHandleWithHash(rpcHash);
-
-            // If the received packet was sent for the server and if we are the server
-            if (handle.Target == Target.NetServer && _network.NetworkServer != null)
-            {
-                foreach (NetConnection connection in _network.NetworkServer.Connections)
-                {
-                    if (connection.EndPoint.Equals(packet.EndPoint))
-                    {
-                        packet.Connection = connection;
-                        break;
-                    }
-                }
-            }
-
-            //Way 1
-            // If there isn't any client with the specified connection
-            if (packet.Connection == null && handle.RpcHash == "NetSync_AuthenticateRpc".GetStableHashCode())
-            {
-                //TODO: Authenticate
-            }
-
-            //Way 2
-            if (packet.Connection == null)
-            {
-                //TODO: Authenticate
-            }
-
-            lock (_netUdp.RpcBufferLock)
-            {
-                _netUdp.RpcBuffer.Add(new Tuple<RpcHandle, Packet>(handle, packet));
-            }
         }
     }
 }

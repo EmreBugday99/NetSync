@@ -1,6 +1,4 @@
-﻿using NetSync2.Client;
-
-namespace NetSync2.Authentication.NetSimpleAuth
+﻿namespace NetSync2.Authentication.NetSimpleAuth
 {
     public class NetSimpleAuthentication : AuthBase
     {

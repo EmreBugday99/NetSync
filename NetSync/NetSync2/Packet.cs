@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Text;
 
 namespace NetSync2
 {
     public class Packet
     {
-        public NetConnection Connection;
-        public IPEndPoint EndPoint;
-
         private List<byte> _buffer;
         private byte[] _readBuffer;
         private int _readPosition;
@@ -20,6 +16,17 @@ namespace NetSync2
         public Packet()
         {
             _buffer = new List<byte>();
+        }
+
+        /// <summary>
+        /// Should be used for deserializing received packets.
+        /// </summary>
+        /// <param name="receivedData">Received data</param>
+        /// <param name="dataSize">Total size of the data that needs to be allocated</param>
+        public Packet(ref byte[] receivedData)
+        {
+            _readBuffer = new byte[receivedData.Length - 1];
+            Array.Copy(receivedData, _readBuffer, receivedData.Length - 1);
         }
 
         /// <summary>
@@ -179,13 +186,6 @@ namespace NetSync2
             _buffer.AddRange(BitConverter.GetBytes(data.Length));
             _buffer.AddRange(Encoding.ASCII.GetBytes(data));
         }
-
-        /// <summary>
-        /// Writes a static string into the packet buffer where the length of the string is known beforehand.
-        /// </summary>
-        /// <param name="data">Static string to write</param>
-        public void WriteStaticString(string data)
-            => _buffer.AddRange(Encoding.ASCII.GetBytes(data));
 
         #endregion Write Methods
 

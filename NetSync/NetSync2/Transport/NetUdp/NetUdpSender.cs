@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System.Net;
+using System.Net.Sockets;
 
 namespace NetSync2.Transport.NetUdp
 {
@@ -18,16 +19,9 @@ namespace NetSync2.Transport.NetUdp
             //SenderSocket.Connect(_network.NetworkClient.ServerEndPoint);
         }
 
-        internal void InvokeRpc(RpcHandle handle, ref Packet packet)
+        internal void SendMessage(ref Packet packet, IPEndPoint receiver)
         {
-            // We don't want server sending to server (it self).
-            if (handle.Target == Target.NetServer && _network.NetworkServer == null)
-                SenderSocket.SendTo(packet.GetByteArray(), _netUdp.ServerEndPoint);
-            // Clients can't send to another client directly.
-            else if (handle.Target == Target.NetClient && _network.NetworkClient == null)
-                SenderSocket.SendTo(packet.GetByteArray(), packet.Connection.EndPoint);
-            else
-                _network.InvokeNetworkError("Failed to send RPC!");
+            SenderSocket.SendTo(packet.GetByteArray(), receiver);
         }
     }
 }
