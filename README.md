@@ -6,8 +6,6 @@ A fully dynamic, high performant networking library for games and applications.
 NetSync has a really dynamic protocol implementation process built in. All you have to do is override the TransportBase class and viola! Check [AsyncTcp](https://github.com/EmreBugday99/NetSync/blob/main/NetSync/NetSync/Transport/AsyncTcp/AsyncTcp.cs) implementation for example.
 <br>
 Each NetworkClient and NetworkServer can use any protocol implementation they want. 
-<br>
-Due to the dynamic nature of these protocol implementations I decided to name them as Transport for easier communication between us :)
 
 ## No Server/Client limit
 A process/application can host as many servers and clients as you want. 
